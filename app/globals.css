@@ -35,3 +35,15 @@ p { text-wrap: pretty; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   .demo-step { opacity: 1; animation: none; }
 }
+
+/* ---- Motion that answers navigation and data loading ---- */
+@keyframes page-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.page-enter { animation: page-enter .28s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes bar-grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.bar-grow { transform-origin: bottom; animation: bar-grow .5s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes bar-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.bar-fill { transform-origin: left; animation: bar-fill .6s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes live-dot { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.live-dot { animation: live-dot 1.8s ease-in-out infinite; }
+@keyframes feed-in { from { opacity: 0; transform: translateX(-6px); background: #FFF6DB; } to { opacity: 1; transform: none; background: transparent; } }
+.feed-in { animation: feed-in .6s ease-out both; }

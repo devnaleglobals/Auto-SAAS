@@ -32,10 +32,33 @@ Facebook doesn't expose Page follows, so the check is Instagram-only.
 - **Smart reminder** (both): one follow-up if the person didn't tap a link, after a delay you choose, only inside Meta's 24-hour window.
   Reminders are sent by the scheduled checker, so keep the cron-job.org job running (every 5 minutes is enough).
 
+## Platform admin
+`/admin` is for the people in `SUPER_ADMIN_EMAILS`: overview (MRR, revenue, signups, plan mix), clients (search,
+filters, per-client plan/usage/suspend/notes), users, payments (from Razorpay webhooks) and system checks.
+
 ## Billing
 Plans and limits live in `lib/plans.js` (Free, Starter ₹499, Pro ₹1,499, Agency ₹3,999). Limits: messages per month,
 connected accounts, team members. Razorpay subscriptions with hosted checkout; the webhook activates and renews plans.
 Cancelling keeps the plan until the paid period ends.
+
+## Platform admin (you, the owner)
+Set `SUPER_ADMIN_EMAILS` in Vercel (comma-separated emails that log in with email/password). Those users see
+**Platform admin** in the sidebar and can open `/admin`:
+- **Overview:** clients, paying clients, MRR, revenue this month, messages sent, signups (30 days), broken connections
+- **Clients:** search and filter all workspaces; open one to see team, accounts, automations, usage, payments, activity
+- **Client actions:** give a plan for free until a date (no Razorpay needed), suspend/resume with a reason (automations stop
+  and the client sees a banner), reset this month's usage, private notes
+- **Users, Payments:** every user with last login; every Razorpay payment
+- **System:** configuration check, last webhook/reply activity, broken connections, admin log, and the
+  **announcement banner** shown to all clients
+Everything an admin does is recorded in the admin log.
+
+## Payments (Razorpay)
+- Clients add **billing details** (business name, GSTIN, email, phone, address) on Billing; they are saved as the
+  Razorpay customer so invoices carry them.
+- Upgrading opens **Razorpay Checkout** as a popup (UPI, cards, netbanking). The payment signature is verified on the
+  server and the plan activates instantly; the webhook confirms renewals, failures and cancellations.
+- Each charge is stored as a payment with a **Download invoice** link.
 
 ## Features
 - Sign in with Instagram, Facebook or email; one-step connect

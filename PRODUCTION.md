@@ -23,6 +23,12 @@
 5. Test with Razorpay's test cards/UPI, then switch to Live keys and live plans.
 To change prices or limits: edit `lib/plans.js` and create matching Razorpay plans.
 
+### Razorpay checks
+- Subscriptions → Settings: allow UPI AutoPay and cards for subscriptions.
+- Webhook events must include `subscription.charged` (it carries the payment and invoice used for payment history).
+- Test: Billing → add billing details → Upgrade → popup → test UPI `success@razorpay` → plan shows instantly,
+  and the payment with an invoice link appears after the webhook (a few seconds).
+
 ## 3. Email (Resend)
 1. resend.com → add and verify your domain (DNS records) → API key → `RESEND_API_KEY`.
 2. `EMAIL_FROM="ReplyRelay <hello@yourbrand.in>"`.
@@ -37,10 +43,23 @@ Used for: reconnect alerts (max once a day per account), payment failed/cancelle
 - Neon: upgrade from the free plan before paying customers (point-in-time restore / backups).
 - Run `npx prisma db push` after every update that changes `prisma/schema.prisma`.
 
-## 6. Before launch checklist
+## 6. Platform admin console
+1. Vercel → Environment Variables: `SUPER_ADMIN_EMAILS = you@yourmail.com` (comma-separate several). These people must
+   have signed up with that email (email login) → Redeploy.
+2. Open `/admin` (or the "Platform admin" link at the bottom of the sidebar). Everyone else gets a 404.
+3. What you can do: see MRR, revenue, clients, usage and broken connections; open a client to give a complimentary
+   plan until a date, reset this month's usage, suspend/resume (stops all sending; the client sees your reason),
+   and keep private notes. Every action is recorded in System → Admin log.
+
+## 7. Before launch checklist
 - [ ] Meta App Review approved (see APP_REVIEW.md)
 - [ ] Custom domain live, all Meta URLs updated
 - [ ] Razorpay live keys + live plans + webhook
 - [ ] Resend domain verified, test password reset works
 - [ ] Uptime monitor and cron job running
 - [ ] NEXT_PUBLIC_SUPPORT_EMAIL set to a real support inbox
+
+
+## Platform admin
+Add `SUPER_ADMIN_EMAILS=you@example.com` in Vercel → Redeploy. Log in with that email (email/password login).
+Use /admin instead of running SQL in Neon to give plans, suspend clients or reset usage.

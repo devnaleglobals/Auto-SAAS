@@ -3,7 +3,7 @@ import { getContext } from '@/lib/context';
 import { PageHeader, Notice, fmtNum } from '@/components/ui';
 import { PLANS, PAID, FEATURES_ALL, effectivePlan, usageThisMonth, rupees } from '@/lib/plans';
 import { billingConfigured } from '@/lib/razorpay';
-import { UpgradeButton, CancelButton } from '@/components/BillingActions';
+import { UpgradeButton, CancelButton, BillingDetails } from '@/components/BillingActions';
 
 export const dynamic = 'force-dynamic';
 const day = (d) => (d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
@@ -27,9 +27,10 @@ export default async function Billing({ searchParams }) {
   const ws = await prisma.workspace.findUnique({ where: { id: ctx.workspace.id } });
   const current = effectivePlan(ws);
   const limits = PLANS[current];
-  const [accounts, members] = await Promise.all([
+  const [accounts, members, payments] = await Promise.all([
     prisma.channel.count({ where: { workspaceId: ws.id } }),
     prisma.membership.count({ where: { workspaceId: ws.id } }),
+    prisma.payment.findMany({ where: { workspaceId: ws.id }, orderBy: { createdAt: 'desc' }, take: 24 }),
   ]);
   const used = usageThisMonth(ws);
   const canManage = ctx.can('manageWorkspace');
@@ -80,7 +81,37 @@ export default async function Billing({ searchParams }) {
           </div>
         ))}
       </div>
-      <p className="mt-5 text-sm text-slate">Every plan includes: {FEATURES_ALL.join(', ').toLowerCase()}. Prices include GST where applicable.</p>
+      <div className="mt-10">
+        <BillingDetails canEdit={canManage} initial={{
+          billingName: ws.billingName || ws.name || '', billingEmail: ws.billingEmail || ctx.user.email || '',
+          billingPhone: ws.billingPhone || '', billingGstin: ws.billingGstin || '', billingAddress: ws.billingAddress || '',
+        }} />
+      </div>
+
+      <h2 className="mb-4 mt-10 font-display text-xl font-bold">Payment history</h2>
+      {payments.length === 0 ? (
+        <p className="card border-dashed p-6 text-sm text-slate">No payments yet. Payments appear here after each monthly charge.</p>
+      ) : (
+        <div className="card overflow-x-auto">
+          <table className="w-full min-w-[560px] text-sm">
+            <thead className="border-b border-line"><tr><th className="th">Date</th><th className="th">Plan</th><th className="th">Amount</th><th className="th">Method</th><th className="th">Status</th><th className="th">Invoice</th></tr></thead>
+            <tbody>
+              {payments.map((p) => (
+                <tr key={p.id} className="border-b border-line last:border-0">
+                  <td className="td whitespace-nowrap">{day(p.createdAt)}</td>
+                  <td className="td">{PLANS[p.plan]?.name || p.plan || '–'}</td>
+                  <td className="td tabular-nums">{rupees(Math.round(p.amount / 100))}</td>
+                  <td className="td capitalize">{p.method || '–'}</td>
+                  <td className="td"><span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${p.status === 'captured' ? 'bg-ok/10 text-ok' : 'bg-bad/10 text-bad'}`}>{p.status === 'captured' ? 'Paid' : p.status === 'refunded' ? 'Refunded' : 'Failed'}</span></td>
+                  <td className="td">{p.invoiceId ? <a href={`/api/billing/invoice/${p.id}`} target="_blank" rel="noreferrer" className="font-semibold text-sky hover:underline">Download</a> : <span className="text-xs text-slate">{p.razorpayId}</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <p className="mt-5 text-sm text-slate">Every plan includes: {FEATURES_ALL.join(', ').toLowerCase()}. Invoices are issued by Razorpay with the billing details above.</p>
     </>
   );
 }

@@ -12,6 +12,7 @@ export async function POST(req) {
   if (!user || !(await bcrypt.compare(password || '', user.passwordHash))) {
     return NextResponse.json({ error: 'Email or password is incorrect.' }, { status: 401 });
   }
+  await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }).catch(() => {});
   await createSession(user);
   return NextResponse.json({ ok: true });
 }

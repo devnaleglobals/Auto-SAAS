@@ -20,7 +20,7 @@ export default function DailyChart({ days }) {
           return (
             <g key={d.key}>
               <title>{`${d.label}: ${d.sent} sent, ${d.clicks} clicks`}</title>
-              <rect x={x} y={y(d.sent)} width={bw} height={Math.max(0, y(0) - y(d.sent))} rx="2" fill="#182033" />
+              <rect x={x} y={y(d.sent)} width={bw} height={Math.max(0, y(0) - y(d.sent))} rx="2" fill="#172036" className="bar-grow" style={{ transformBox: 'fill-box', animationDelay: `${i * 14}ms` }} />
               {d.clicks > 0 && <circle cx={x + bw / 2} cy={y(d.clicks)} r="3.5" fill="#F2A900" stroke="#fff" strokeWidth="1.5" />}
               {(i % 5 === 0 || i === days.length - 1) && <text x={x + bw / 2} y={H - 8} textAnchor="middle" fontSize="11" fill="#5B6478">{d.label}</text>}
             </g>
