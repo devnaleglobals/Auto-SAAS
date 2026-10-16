@@ -1,0 +1,323 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(cuid())
+  name         String
+  email        String?      @unique
+  passwordHash String?
+  facebookId   String?      @unique
+  lastLoginAt  DateTime?
+  createdAt    DateTime     @default(now())
+  memberships  Membership[]
+  auditLogs    AuditLog[]
+}
+
+model Workspace {
+  id          String       @id @default(cuid())
+  name        String
+  createdAt   DateTime     @default(now())
+  // Billing (Razorpay subscriptions)
+  plan        String       @default("FREE") // FREE | STARTER | PRO | AGENCY
+  subStatus   String? // created | authenticated | active | pending | halted | cancelled | completed
+  razorpaySubId String?    @unique
+  periodEnd   DateTime? // paid access lasts until this date
+  usageMonth  String? // "2026-10"
+  usageCount  Int          @default(0) // messages + replies sent this month
+  // Platform admin
+  suspended     Boolean    @default(false)
+  suspendReason String?
+  adminNote     String?
+  payments    Payment[]
+  memberships Membership[]
+  invites     Invite[]
+  channels    Channel[]
+  automations Automation[]
+  auditLogs   AuditLog[]
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+model Membership {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  role        Role      @default(MEMBER)
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, workspaceId])
+}
+
+model Invite {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  token       String    @unique
+  role        Role      @default(MEMBER)
+  label       String? // who it is for, e.g. an email or name
+  createdById String?
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+enum Platform {
+  INSTAGRAM
+  FACEBOOK
+}
+
+model Channel {
+  id             String       @id @default(cuid())
+  workspaceId    String
+  workspace      Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connectedById  String?
+  platform       Platform
+  externalId     String
+  username       String
+  name           String?
+  picture        String?
+  followers      Int?
+  accessTokenEnc String
+  tokenExpiresAt DateTime?
+  needsReconnect Boolean      @default(false)
+  alertedAt      DateTime? // last "connection stopped working" email
+  iceBreakers    Json? // [{ question, automationId }]
+  connectedAt    DateTime     @default(now())
+  automations    Automation[]
+  leads          Lead[]
+
+  @@unique([platform, externalId])
+}
+
+enum MatchType {
+  CONTAINS
+  EXACT
+  ANY
+}
+
+enum AutomationStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+enum AutomationType {
+  COMMENT_REPLY // public reply under the comment only
+  COMMENT_DM // comment -> private message (optionally starts a flow)
+  DM_FLOW // keyword sent in DMs -> conversation flow
+  STORY_REPLY // Instagram: reply to a story -> conversation flow
+  STORY_MENTION // Instagram: someone mentions you in their story -> conversation flow
+  COMMENT_MODERATION // hide or delete comments with blocked words or links
+}
+
+enum Scope {
+  POST
+  ALL_POSTS
+}
+
+model Automation {
+  id             String           @id @default(cuid())
+  workspaceId    String
+  workspace      Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdById    String?
+  channelId      String
+  channel        Channel          @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  name           String
+  type           AutomationType   @default(COMMENT_DM)
+  scope          Scope            @default(POST)
+  mediaId        String? // null when scope = ALL_POSTS
+  mediaPermalink String?
+  mediaThumb     String?
+  mediaCaption   String?
+  keywords       String[]
+  matchType      MatchType        @default(CONTAINS)
+  commentReplies String[]
+  dmMessage      String
+  linkUrl        String?
+  trackClicks    Boolean          @default(true)
+  // Conversation flow (COMMENT_DM with a flow, or DM_FLOW)
+  flow           Json? // { steps: [{ id, text, image, buttons: [{ title, action: "step"|"url", target }], next }] }
+  openerButton   String? // COMMENT_DM + flow: button on the first private message, e.g. "Send me the link"
+  requireFollow  Boolean          @default(false)
+  followPrompt   String?
+  followButton   String?
+  followRetry    String?
+  // Smart follow-up: one reminder if no link was tapped
+  followUpMins   Int?
+  followUpText   String?
+  // Moderation
+  modHideLinks   Boolean          @default(false)
+  modAction      String? // HIDE | DELETE
+  startAt        DateTime?
+  endAt          DateTime?
+  maxReplies     Int?
+  replyCount     Int              @default(0)
+  lastCheckedAt  DateTime?
+  lastCheckNote  String?
+  status         AutomationStatus @default(ACTIVE)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  events         Event[]
+  conversations  Conversation[]
+
+  @@index([channelId, status])
+}
+
+model Event {
+  id                String     @id @default(cuid())
+  automationId      String
+  automation        Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  commentId         String     @unique
+  postId            String?
+  commenterId       String?
+  commenterUsername String?
+  commentText       String
+  matchedKeyword    String?
+  dmStatus          String     @default("PENDING") // PENDING | SENT | FAILED | SKIPPED
+  dmError           String?
+  replyStatus       String     @default("PENDING")
+  replyError        String?
+  replyText         String?
+  linkCode          String?    @unique
+  clickCount        Int        @default(0)
+  firstClickedAt    DateTime?
+  createdAt         DateTime   @default(now())
+
+  @@index([automationId, createdAt])
+}
+
+model AuditLog {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action      String
+  detail      String?
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId, createdAt])
+}
+
+enum ConversationState {
+  ACTIVE
+  AWAITING_FOLLOW
+  AWAITING_INPUT
+  DONE
+}
+
+// One person's progress through one automation's flow.
+model Conversation {
+  id            String            @id @default(cuid())
+  automationId  String
+  automation    Automation        @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  contactId     String // Instagram-scoped ID / Page-scoped ID of the person
+  username      String?
+  state         ConversationState @default(ACTIVE)
+  currentStepId String?
+  pendingStepId String? // step to send once the follow check passes
+  linkCode      String? // tracked link from the comment that started it
+  trackCode     String?           @unique // for tracked link buttons inside the flow
+  clicks        Int               @default(0)
+  inputStepId   String? // step whose question is waiting for an answer
+  inputTries    Int               @default(0)
+  lastInboundAt DateTime? // last message or tap from the person (24-hour window)
+  lastSentAt    DateTime?
+  followUpSentAt DateTime?
+  followed      Boolean?
+  followPrompts Int               @default(0)
+  startedAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  logs          FlowLog[]
+
+  @@unique([automationId, contactId])
+  @@index([automationId, updatedAt])
+}
+
+model FlowLog {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  kind           String // started | step | tap | follow_prompt | follow_ok | link | error
+  detail         String?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+// Dedupe for incoming messages and taps (webhooks can repeat; the DM checker re-reads).
+model InboundMessage {
+  mid       String   @id
+  createdAt DateTime @default(now())
+}
+
+// Details people shared inside conversations (name, phone, email, answers).
+model Lead {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  channelId    String
+  channel      Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  contactId    String
+  username     String?
+  name         String?
+  phone        String?
+  email        String?
+  answers      Json? // { "Question label": "answer" }
+  source       String? // automation name
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([channelId, contactId])
+  @@index([workspaceId, updatedAt])
+}
+
+model PasswordReset {
+  token     String    @id
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+// Every Razorpay subscription charge, for client payment history and platform revenue.
+model Payment {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  razorpayId   String    @unique // payment id (pay_…)
+  invoiceId    String?
+  subscriptionId String?
+  plan         String?
+  amount       Int // in paise
+  currency     String    @default("INR")
+  status       String // captured | failed | refunded
+  method       String? // upi | card | …
+  createdAt    DateTime  @default(now())
+
+  @@index([workspaceId, createdAt])
+}
+
+// Actions taken in the platform admin console.
+model AdminLog {
+  id          String   @id @default(cuid())
+  adminEmail  String
+  workspaceId String?
+  action      String
+  detail      String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
