@@ -18,7 +18,7 @@ function Icon({ d }) {
   return <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>;
 }
 
-export default function Sidebar({ user, workspace, workspaces, role, isAdmin }) {
+export default function Sidebar({ user, workspace, workspaces, role }) {
   const path = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -46,13 +46,7 @@ export default function Sidebar({ user, workspace, workspaces, role, isAdmin }) 
           <p className="rounded-lg border border-white/10 bg-inkSoft px-3 py-2 text-sm text-white">{workspace.name}</p>
         )}
       </div>
-      <div className="mt-3 px-3">
-        <button type="button" onClick={() => window.dispatchEvent(new Event('open-command-palette'))}
-          className="flex w-full items-center justify-between rounded-lg border border-white/10 px-3 py-2 text-sm text-white/60 transition-colors hover:border-white/25 hover:text-white">
-          <span>Search or jump to…</span><kbd className="rounded bg-white/10 px-1.5 py-0.5 text-[11px] font-semibold">Ctrl K</kbd>
-        </button>
-      </div>
-      <nav className="mt-4 flex-1 space-y-0.5 px-3" aria-label="Main">
+      <nav className="mt-5 flex-1 space-y-0.5 px-3" aria-label="Main">
         {NAV.map((n) => (
           <Link key={n.href} href={n.href} onClick={() => setOpen(false)} aria-current={active(n.href) ? 'page' : undefined}
             className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150 ${active(n.href) ? 'bg-white/10 text-white before:absolute before:-left-3 before:top-1.5 before:h-[calc(100%-12px)] before:w-1 before:rounded-r-full before:bg-marigold' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}>
@@ -60,13 +54,6 @@ export default function Sidebar({ user, workspace, workspaces, role, isAdmin }) 
           </Link>
         ))}
       </nav>
-      {isAdmin && (
-        <div className="px-3 pb-3">
-          <Link href="/admin" className="flex items-center justify-between rounded-lg bg-marigold/15 px-3 py-2 text-sm font-semibold text-marigold transition-colors hover:bg-marigold/25">
-            Platform admin <span aria-hidden>↗</span>
-          </Link>
-        </div>
-      )}
       <div className="border-t border-white/10 px-5 py-4">
         <p className="truncate text-sm font-semibold text-white">{user.name}</p>
         <p className="truncate text-xs text-white/60">{user.email || 'Signed in with social account'} · {role.toLowerCase()}</p>

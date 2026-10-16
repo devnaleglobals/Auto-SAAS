@@ -32,10 +32,6 @@ Facebook doesn't expose Page follows, so the check is Instagram-only.
 - **Smart reminder** (both): one follow-up if the person didn't tap a link, after a delay you choose, only inside Meta's 24-hour window.
   Reminders are sent by the scheduled checker, so keep the cron-job.org job running (every 5 minutes is enough).
 
-## Platform admin
-`/admin` is for the people in `SUPER_ADMIN_EMAILS`: overview (MRR, revenue, signups, plan mix), clients (search,
-filters, per-client plan/usage/suspend/notes), users, payments (from Razorpay webhooks) and system checks.
-
 ## Billing
 Plans and limits live in `lib/plans.js` (Free, Starter ₹499, Pro ₹1,499, Agency ₹3,999). Limits: messages per month,
 connected accounts, team members. Razorpay subscriptions with hosted checkout; the webhook activates and renews plans.

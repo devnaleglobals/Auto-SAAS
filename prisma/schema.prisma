@@ -13,7 +13,6 @@ model User {
   email        String?      @unique
   passwordHash String?
   facebookId   String?      @unique
-  lastLoginAt  DateTime?
   createdAt    DateTime     @default(now())
   memberships  Membership[]
   auditLogs    AuditLog[]
@@ -30,11 +29,6 @@ model Workspace {
   periodEnd   DateTime? // paid access lasts until this date
   usageMonth  String? // "2026-10"
   usageCount  Int          @default(0) // messages + replies sent this month
-  // Platform admin
-  suspended     Boolean    @default(false)
-  suspendReason String?
-  adminNote     String?
-  payments    Payment[]
   memberships Membership[]
   invites     Invite[]
   channels    Channel[]
@@ -290,34 +284,4 @@ model PasswordReset {
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
-}
-
-// Every Razorpay subscription charge, for client payment history and platform revenue.
-model Payment {
-  id           String    @id @default(cuid())
-  workspaceId  String
-  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  razorpayId   String    @unique // payment id (pay_…)
-  invoiceId    String?
-  subscriptionId String?
-  plan         String?
-  amount       Int // in paise
-  currency     String    @default("INR")
-  status       String // captured | failed | refunded
-  method       String? // upi | card | …
-  createdAt    DateTime  @default(now())
-
-  @@index([workspaceId, createdAt])
-}
-
-// Actions taken in the platform admin console.
-model AdminLog {
-  id          String   @id @default(cuid())
-  adminEmail  String
-  workspaceId String?
-  action      String
-  detail      String?
-  createdAt   DateTime @default(now())
-
-  @@index([createdAt])
 }

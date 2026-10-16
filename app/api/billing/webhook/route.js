@@ -42,16 +42,6 @@ export async function POST(req) {
       break;
   }
   await prisma.workspace.update({ where: { id: ws.id }, data });
-
-  // Record the payment for the client's history and platform revenue.
-  const pay = body.payload?.payment?.entity;
-  if (pay?.id) {
-    const rec = {
-      workspaceId: ws.id, invoiceId: pay.invoice_id || null, subscriptionId: sub.id, plan,
-      amount: pay.amount || 0, currency: pay.currency || 'INR', status: pay.status || 'captured', method: pay.method || null,
-    };
-    await prisma.payment.upsert({ where: { razorpayId: pay.id }, create: { razorpayId: pay.id, ...rec }, update: rec }).catch(() => {});
-  }
   await prisma.auditLog.create({ data: { workspaceId: ws.id, action: `billing.${body.event.split('.')[1]}`, detail: plan } }).catch(() => {});
   return NextResponse.json({ ok: true });
 }
