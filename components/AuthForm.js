@@ -71,12 +71,12 @@ export default function AuthForm({ mode }) {
         <p className="mt-6 text-xs text-slate">By continuing you agree to our <Link href="/privacy" className="underline">Privacy Policy</Link>.</p>
       </div>
       </div>
-      <aside className="relative hidden flex-col justify-center overflow-hidden bg-ink px-12 py-12 lg:flex">
+      <aside className="relative hidden flex-col justify-center overflow-hidden bg-navy px-12 py-12 lg:flex">
         <div className="mx-auto w-full max-w-md">
           <h2 className="font-display text-4xl font-extrabold leading-[1.05] text-white">Every comment answered in seconds.</h2>
           <ul className="mt-6 space-y-2.5 text-sm text-white/75">
             {['Official Meta API. We never ask for your Instagram password.', 'Instagram and Facebook Pages in one place.', 'Start free. Upgrade or cancel anytime.'].map((t) => (
-              <li key={t} className="flex gap-2.5"><span aria-hidden className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-marigold text-[10px] font-bold text-ink">✓</span>{t}</li>
+              <li key={t} className="flex gap-2.5"><span aria-hidden className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-marigold text-[10px] font-bold text-navy">✓</span>{t}</li>
             ))}
           </ul>
           <div className="mt-10"><ChatDemo dark /></div>

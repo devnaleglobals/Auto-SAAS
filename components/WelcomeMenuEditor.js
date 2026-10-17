@@ -54,7 +54,7 @@ export default function WelcomeMenuEditor({ channelId, initial, flows, isFb }) {
       </div>
       <aside>
         <p className="mb-3 text-sm font-semibold text-slate">Preview</p>
-        <div className="rounded-[28px] border-[6px] border-ink bg-canvas p-4">
+        <div className="rounded-[28px] border-[6px] border-navy bg-canvas p-4">
           <p className="mb-3 text-center text-xs text-slate">New chat</p>
           <div className="space-y-2">
             {items.filter((x) => x.question).map((x, i) => (

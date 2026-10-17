@@ -60,7 +60,7 @@ export default function CommandPalette({ isAdmin, canEdit }) {
           {list.map((item, k) => (
             <li key={item[0]} role="option" aria-selected={k === i}>
               <button onMouseEnter={() => setI(k)} onClick={() => go(item)}
-                className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm ${k === i ? 'bg-ink text-white' : 'hover:bg-canvas'}`}>
+                className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm ${k === i ? 'bg-navy text-white' : 'hover:bg-canvas'}`}>
                 <span className="font-semibold">{item[0]}</span><span className={`text-xs ${k === i ? 'text-white/70' : 'text-slate'}`}>{item[2]}</span>
               </button>
             </li>

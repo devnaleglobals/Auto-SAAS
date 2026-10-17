@@ -1,7 +1,7 @@
 const styles = {
   ACTIVE: 'bg-ok/10 text-ok', PAUSED: 'bg-slate/10 text-slate', COMPLETED: 'bg-ink/10 text-ink',
   SENT: 'bg-ok/10 text-ok', HIDDEN: 'bg-marigold/20 text-ink', DELETED: 'bg-bad/10 text-bad', FAILED: 'bg-bad/10 text-bad', SKIPPED: 'bg-slate/10 text-slate', PENDING: 'bg-marigold/20 text-ink',
-  OWNER: 'bg-ink text-white', ADMIN: 'bg-sky/10 text-sky', MEMBER: 'bg-slate/10 text-ink', VIEWER: 'bg-slate/10 text-slate',
+  OWNER: 'bg-navy text-white', ADMIN: 'bg-sky/10 text-sky', MEMBER: 'bg-slate/10 text-ink', VIEWER: 'bg-slate/10 text-slate',
 };
 const words = {
   ACTIVE: 'Running', PAUSED: 'Paused', COMPLETED: 'Finished', SENT: 'Sent', HIDDEN: 'Hidden', DELETED: 'Deleted', FAILED: 'Failed', SKIPPED: 'Skipped', PENDING: 'Sending',

@@ -22,7 +22,7 @@ export function FeedbackProvider({ children }) {
       {children}
       <div className="pointer-events-none fixed bottom-5 left-1/2 z-50 flex w-[min(92vw,420px)] -translate-x-1/2 flex-col gap-2 lg:left-auto lg:right-6 lg:translate-x-0" role="status" aria-live="polite">
         {toasts.map((t) => (
-          <div key={t.id} className={`pointer-events-auto flex animate-toast-in items-start gap-3 rounded-xl px-4 py-3 text-sm font-medium shadow-pop ${t.tone === 'bad' ? 'bg-bad text-white' : 'bg-ink text-white'}`}>
+          <div key={t.id} className={`pointer-events-auto flex animate-toast-in items-start gap-3 rounded-xl px-4 py-3 text-sm font-medium shadow-pop ${t.tone === 'bad' ? 'bg-bad text-white' : 'bg-navy text-white'}`}>
             <span aria-hidden className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${t.tone === 'bad' ? 'bg-white/20' : 'bg-ok'}`}>{t.tone === 'bad' ? '!' : '✓'}</span>
             <span>{t.message}</span>
           </div>

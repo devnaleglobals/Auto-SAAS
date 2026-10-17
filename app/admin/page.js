@@ -36,7 +36,7 @@ export default async function AdminOverview() {
             {Object.entries(s.byPlan).map(([k, n]) => (
               <li key={k}>
                 <div className="flex justify-between text-sm"><span className="font-semibold">{PLANS[k].name}</span><span className="tabular-nums text-slate">{fmtNum(n)}</span></div>
-                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-canvas"><div className="bar-fill h-full rounded-full bg-ink" style={{ width: `${s.workspaces ? (n / s.workspaces) * 100 : 0}%` }} /></div>
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-canvas"><div className="bar-fill h-full rounded-full bg-navy" style={{ width: `${s.workspaces ? (n / s.workspaces) * 100 : 0}%` }} /></div>
               </li>
             ))}
           </ul>

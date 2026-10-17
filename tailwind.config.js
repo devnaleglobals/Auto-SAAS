@@ -1,19 +1,23 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: ['./app/**/*.{js,jsx}', './components/**/*.{js,jsx}'],
   theme: {
     extend: {
       colors: {
-        ink: '#172036',
-        inkSoft: '#222C45',
-        slate: '#59637A',
-        canvas: '#F4F6FA',
-        line: '#DCE1EB',
-        marigold: '#F2A900',
-        marigoldDark: '#D99700',
-        ok: '#0E8A6A',
-        bad: '#C2410C',
-        sky: '#2563EB',
+        // Theme tokens: values live in app/globals.css (:root = light, .dark = dark)
+        ink: 'rgb(var(--ink) / <alpha-value>)',             // main text (flips in dark mode)
+        navy: 'rgb(var(--navy) / <alpha-value>)',           // brand navy surfaces: sidebar, dark buttons, chat bubbles
+        inkSoft: 'rgb(var(--ink-soft) / <alpha-value>)',    // navy hover
+        slate: 'rgb(var(--slate) / <alpha-value>)',         // secondary text
+        canvas: 'rgb(var(--canvas) / <alpha-value>)',       // page background
+        surface: 'rgb(var(--surface) / <alpha-value>)',     // cards and panels
+        line: 'rgb(var(--line) / <alpha-value>)',           // borders
+        marigold: 'rgb(var(--marigold) / <alpha-value>)',
+        marigoldDark: 'rgb(var(--marigold-dark) / <alpha-value>)',
+        ok: 'rgb(var(--ok) / <alpha-value>)',
+        bad: 'rgb(var(--bad) / <alpha-value>)',
+        sky: 'rgb(var(--sky) / <alpha-value>)',
       },
       fontFamily: {
         display: ['var(--font-display)', 'system-ui', 'sans-serif'],

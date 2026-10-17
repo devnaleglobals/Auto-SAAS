@@ -27,7 +27,7 @@ export default function FlowEditor({ steps, setSteps }) {
         return (
           <div key={s.id} className="rounded-xl border border-line bg-canvas/60 p-4">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-md bg-ink px-2 py-0.5 text-xs font-semibold text-white">{i === 0 ? 'First message' : `Message ${i + 1}`}</span>
+              <span className="rounded-md bg-navy px-2 py-0.5 text-xs font-semibold text-white">{i === 0 ? 'First message' : `Message ${i + 1}`}</span>
               <input value={s.name} onChange={(e) => update(s.id, { name: e.target.value })} placeholder="Name (only you see this)" aria-label={`Name for message ${i + 1}`}
                 className="min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-2 py-1 text-sm font-semibold hover:border-line focus:border-ink focus:bg-white focus:outline-none" />
               <div className="flex gap-1">
@@ -43,7 +43,7 @@ export default function FlowEditor({ steps, setSteps }) {
                 return (
                   <button key={v || 'msg'} type="button" role="radio" aria-checked={on}
                     onClick={() => update(s.id, v ? { ask: { field: v, label: s.ask?.label || '' }, buttons: [], text: s.text || ASK_DEFAULT[v] } : { ask: null })}
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${on ? 'border-ink bg-ink text-white' : 'border-line bg-white hover:border-slate/60'}`}>{l}</button>
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${on ? 'border-ink bg-navy text-white' : 'border-line bg-white hover:border-slate/60'}`}>{l}</button>
                 );
               })}
             </div>

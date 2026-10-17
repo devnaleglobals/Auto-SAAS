@@ -11,7 +11,7 @@ function Step({ n, title, children, hint }) {
   return (
     <section className="card p-6">
       <h2 className="flex items-baseline gap-3 font-display text-lg font-bold">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-sm text-white">{n}</span>{title}
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy text-sm text-white">{n}</span>{title}
       </h2>
       {hint && <p className="ml-10 mt-1 text-sm text-slate">{hint}</p>}
       <div className="mt-5 space-y-5">{children}</div>
@@ -36,7 +36,7 @@ function ListInput({ id, values, setValues, placeholder, max = 10 }) {
       {values.length > 0 && (
         <ul className="mt-3 flex flex-wrap gap-2">
           {values.map((v) => (
-            <li key={v} className="flex items-center gap-2 rounded-full bg-ink px-3 py-1 text-sm text-white">
+            <li key={v} className="flex items-center gap-2 rounded-full bg-navy px-3 py-1 text-sm text-white">
               {v}<button type="button" aria-label={`Remove ${v}`} onClick={() => setValues(values.filter((x) => x !== v))} className="text-white/60 hover:text-white">×</button>
             </li>
           ))}
@@ -53,7 +53,7 @@ const toLocalInput = (iso) => {
 };
 
 function Bubble({ me, children }) {
-  return <div className={`max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-sm ${me ? 'ml-auto rounded-br-sm bg-ink text-white' : 'rounded-bl-sm bg-white'}`}>{children}</div>;
+  return <div className={`max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-sm ${me ? 'ml-auto rounded-br-sm bg-navy text-white' : 'rounded-bl-sm bg-white'}`}>{children}</div>;
 }
 function Buttons({ items }) {
   if (!items?.length) return null;
@@ -263,7 +263,7 @@ export default function Builder({ channels, initial, type: typeProp, initialChan
               {[['CONTAINS', isComment ? 'Comment contains a keyword' : 'Message contains a keyword'], ['EXACT', 'Exactly the keyword'], ['ANY', isComment ? 'Any comment' : type === 'STORY_REPLY' ? 'Any story reply' : 'Any message']].map(([v, l]) => (
                 <button type="button" role="radio" aria-checked={matchType === v} key={v} onClick={() => setMatchType(v)}
                   disabled={v === 'ANY' && isComment && scope === 'ALL_POSTS'}
-                  className={`rounded-full border px-4 py-2 text-sm font-semibold disabled:opacity-40 ${matchType === v ? 'border-ink bg-ink text-white' : 'border-line bg-white'}`}>{l}</button>
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold disabled:opacity-40 ${matchType === v ? 'border-ink bg-navy text-white' : 'border-line bg-white'}`}>{l}</button>
               ))}
             </div>
             {matchType !== 'ANY' && (
@@ -351,7 +351,7 @@ export default function Builder({ channels, initial, type: typeProp, initialChan
 
       <aside className="xl:sticky xl:top-8 xl:self-start">
         <p className="mb-3 text-sm font-semibold text-slate">Preview</p>
-        <div className="overflow-hidden rounded-[28px] border-[6px] border-ink bg-white">
+        <div className="overflow-hidden rounded-[28px] border-[6px] border-navy bg-white">
           <div className="flex items-center gap-2 border-b border-line p-3">
             {account.picture ? <img src={account.picture} alt="" className="h-7 w-7 rounded-full" /> : <span className="h-7 w-7 rounded-full bg-canvas" />}
             <span className="text-sm font-semibold">{account.username}</span>

@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { ThemeToggle } from './Theme';
 
 const NAV = [
   { href: '/dashboard', label: 'Overview', icon: 'M3 12h4v8H3zM10 4h4v16h-4zM17 9h4v11h-4z' },
@@ -90,16 +91,17 @@ export default function Sidebar({ user, workspace, workspaces, role, isAdmin, pl
             <div className={`bar-fill h-full rounded-full ${plan.used >= plan.cap ? 'bg-bad' : plan.used >= plan.cap * 0.8 ? 'bg-marigold' : 'bg-ok'}`} style={{ width: `${Math.min(100, (plan.used / plan.cap) * 100)}%` }} />
           </div>
           <p className="mt-1.5 text-[11px] text-white/50">Messages this month</p>
-          {plan.canUpgrade && <Link href="/dashboard/billing" onClick={() => setOpen(false)} className="mt-2 block rounded-md bg-marigold px-2 py-1.5 text-center text-xs font-semibold text-ink transition-colors hover:bg-marigoldDark">Upgrade plan</Link>}
+          {plan.canUpgrade && <Link href="/dashboard/billing" onClick={() => setOpen(false)} className="mt-2 block rounded-md bg-marigold px-2 py-1.5 text-center text-xs font-semibold text-navy transition-colors hover:bg-marigoldDark">Upgrade plan</Link>}
         </div>
       )}
       <div className="flex items-center gap-3 border-t border-white/10 px-4 py-4">
-        <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-marigold font-display text-sm font-bold text-ink">{(user.name || '?').trim().charAt(0).toUpperCase()}</span>
+        <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-marigold font-display text-sm font-bold text-navy">{(user.name || '?').trim().charAt(0).toUpperCase()}</span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-white">{user.name}</p>
           <p className="truncate text-xs text-white/55">{user.email || 'Social sign-in'}</p>
           <p className="text-xs capitalize text-white/40">{role.toLowerCase()}</p>
         </div>
+        <ThemeToggle />
         <form action="/api/auth/logout" method="post"><button className="rounded-md px-2 py-1 text-xs font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white">Log out</button></form>
       </div>
     </div>
@@ -107,12 +109,12 @@ export default function Sidebar({ user, workspace, workspaces, role, isAdmin, pl
 
   return (
     <>
-      <div className="flex items-center justify-between bg-ink px-4 py-3 lg:hidden">
+      <div className="flex items-center justify-between bg-navy px-4 py-3 lg:hidden">
         <Link href="/dashboard" className="font-display font-bold text-white">ReplyRelay</Link>
         <button onClick={() => setOpen(!open)} aria-expanded={open} className="rounded-md px-2 py-1 text-sm font-semibold text-white">{open ? 'Close' : 'Menu'}</button>
       </div>
-      {open && <div className="fixed inset-0 z-40 animate-fade-in bg-ink lg:hidden">{body}</div>}
-      <aside className="fixed inset-y-0 left-0 hidden w-60 bg-ink lg:block">{body}</aside>
+      {open && <div className="fixed inset-0 z-40 animate-fade-in bg-navy lg:hidden">{body}</div>}
+      <aside className="fixed inset-y-0 left-0 hidden w-60 bg-navy lg:block dark:border-r dark:border-white/5">{body}</aside>
     </>
   );
 }

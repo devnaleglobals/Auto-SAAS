@@ -1,6 +1,7 @@
 import { getContext } from '@/lib/context';
 import { PageHeader } from '@/components/ui';
 import WorkspaceSettings from '@/components/WorkspaceSettings';
+import { ThemePicker } from '@/components/Theme';
 import { appUrl } from '@/lib/platforms';
 
 export const dynamic = 'force-dynamic';
@@ -12,6 +13,12 @@ export default async function Settings() {
     <>
       <PageHeader title="Settings" />
       <div className="space-y-6">
+        <section className="card p-6">
+          <h2 className="font-display text-lg font-bold">Appearance</h2>
+          <p className="mt-1 text-sm text-slate">Choose how ReplyRelay looks on this device.</p>
+          <div className="mt-4"><ThemePicker /></div>
+        </section>
+
         <WorkspaceSettings name={ctx.workspace.name} canEdit={ctx.can('manageWorkspace')} />
 
         <section className="card p-6">
