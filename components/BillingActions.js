@@ -26,7 +26,7 @@ export function UpgradeButton({ plan, label, primary }) {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       setBusy(false);
-      toast(data.error || 'Couldn’t start checkout.', 'bad');
+      toast(data.error || `Couldn’t start checkout (error ${res.status}). Check Vercel logs for “Razorpay”.`, 'bad');
       if (data.needsDetails) document.getElementById('billing-details')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
@@ -74,7 +74,7 @@ export function BillingDetails({ initial, canEdit }) {
       <p className="mt-1 text-sm text-slate">Printed on your Razorpay invoices. Add your GSTIN to claim input tax credit.</p>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <div><label className="label" htmlFor="bn">Business name</label><input id="bn" className="field" value={v.billingName} onChange={set('billingName')} disabled={!canEdit} required /></div>
-        <div><label className="label" htmlFor="bg">GSTIN <span className="font-normal text-slate">(optional)</span></label><input id="bg" className="field uppercase" maxLength={15} value={v.billingGstin} onChange={set('billingGstin')} disabled={!canEdit} placeholder="29ABCDE1234F1Z5" /></div>
+        <div><label className="label" htmlFor="bg">GSTIN <span className="font-normal text-slate">(optional)</span></label><input id="bg" className="field uppercase" maxLength={15} value={v.billingGstin} onChange={set('billingGstin')} disabled={!canEdit} placeholder="15-character GSTIN" /></div>
         <div><label className="label" htmlFor="be">Billing email</label><input id="be" type="email" className="field" value={v.billingEmail} onChange={set('billingEmail')} disabled={!canEdit} /></div>
         <div><label className="label" htmlFor="bp">Phone</label><input id="bp" className="field" value={v.billingPhone} onChange={set('billingPhone')} disabled={!canEdit} placeholder="+91 98765 43210" /></div>
         <div className="sm:col-span-2"><label className="label" htmlFor="ba">Address</label><textarea id="ba" rows={2} className="field" value={v.billingAddress} onChange={set('billingAddress')} disabled={!canEdit} /></div>
