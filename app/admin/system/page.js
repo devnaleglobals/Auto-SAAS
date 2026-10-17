@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import { fmtDate, fmtNum } from '@/components/ui';
 import AnnouncementForm from '@/components/AnnouncementForm';
+import { appUrl } from '@/lib/platforms';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,6 +61,20 @@ export default async function AdminSystem() {
         </section>
       </div>
       <div className="mt-6"><AnnouncementForm initial={announcement?.value || null} /></div>
+      <section className="card mt-6 p-6">
+        <h2 className="font-display text-lg font-bold">Platform links</h2>
+        <p className="mt-1 text-sm text-slate">For the Meta developer app, Razorpay and uptime monitoring.</p>
+        <dl className="mt-4 space-y-3 text-sm">
+          {[
+            ['Instagram redirect URI', '/api/instagram/callback'], ['Facebook redirect URI', '/api/facebook/callback'],
+            ['Instagram webhook', '/api/webhooks/instagram'], ['Facebook webhook', '/api/webhooks/facebook'],
+            ['Privacy Policy', '/privacy'], ['Terms of Service', '/terms'], ['Data deletion', '/data-deletion'],
+            ['Razorpay webhook', '/api/billing/webhook'], ['Health check', '/api/health'],
+          ].map(([k, path]) => (
+            <div key={k} className="grid gap-1 sm:grid-cols-[200px_1fr]"><dt className="font-semibold">{k}</dt><dd><code className="break-all rounded bg-canvas px-2 py-1">{appUrl()}{path}</code></dd></div>
+          ))}
+        </dl>
+      </section>
       <section className="mt-6">
         <h2 className="mb-3 font-display text-lg font-bold">Admin log</h2>
         {logs.length === 0 ? <p className="card border-dashed p-5 text-sm text-slate">No admin actions yet.</p> : (

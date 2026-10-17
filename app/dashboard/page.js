@@ -161,7 +161,7 @@ export default async function Overview({ searchParams }) {
             ))}
           </dl>
 
-          <div className="mt-6 grid gap-6 xl:grid-cols-[1.35fr_1fr]">
+          <div className="mt-6 grid items-start gap-6 xl:grid-cols-[1.35fr_1fr]">
             <section className="card p-5">
               <h2 className="mb-4 font-display text-lg font-bold">Daily activity</h2>
               <DailyChart days={days} />
@@ -175,7 +175,7 @@ export default async function Overview({ searchParams }) {
               {feed.length === 0 ? (
                 <p className="mt-6 text-sm text-slate">Replies, conversations and new leads appear here as they happen. Comment your keyword from another account to see the first one.</p>
               ) : (
-                <ol className="mt-3 flex-1 space-y-1" aria-live="polite">
+                <ol className="-mx-1 mt-3 max-h-[420px] space-y-1 overflow-y-auto px-1" aria-live="polite">
                   {feed.map((f, i) => (
                     <li key={f.id} className={`flex gap-3 rounded-lg px-2 py-2 ${i === 0 && Date.now() - new Date(f.at).getTime() < 120000 ? 'feed-in' : ''}`}>
                       <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${f.tone === 'bad' ? 'bg-bad' : f.tone === 'lead' ? 'bg-marigold' : 'bg-ok'}`} aria-hidden />

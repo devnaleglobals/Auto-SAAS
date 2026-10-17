@@ -16,6 +16,8 @@ export default function WorkspaceSettings({ name, canEdit }) {
   }
   return (
     <form onSubmit={save} className="card p-6">
+      <h2 className="font-display text-lg font-bold">Workspace</h2>
+      <p className="mb-5 mt-1 text-sm text-slate">The name your team and invite links show.</p>
       <label className="label" htmlFor="wsname">Workspace name</label>
       <div className="flex flex-wrap gap-2">
         <input id="wsname" value={value} onChange={(e) => setValue(e.target.value)} disabled={!canEdit} className="field max-w-sm" />

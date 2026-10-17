@@ -15,7 +15,7 @@ function Meter({ label, used, limit }) {
     <div>
       <div className="flex justify-between text-sm"><span className="font-semibold">{label}</span><span className="tabular-nums text-slate">{fmtNum(used)} of {fmtNum(limit)}</span></div>
       <div className="mt-2 h-2 overflow-hidden rounded-full bg-canvas" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
-        <div className={`h-full rounded-full ${tone} transition-[width] duration-500`} style={{ width: `${pct}%` }} />
+        <div className={`h-full rounded-full ${tone} transition-[width] duration-500`} style={{ width: `${used > 0 ? Math.max(pct, 2) : 0}%` }} />
       </div>
     </div>
   );
@@ -49,7 +49,11 @@ export default async function Billing({ searchParams }) {
         <div>
           <p className="text-sm text-slate">Current plan</p>
           <p className="mt-1 font-display text-3xl font-bold">{limits.name}</p>
-          <p className="mt-1 text-sm text-slate">{current === 'FREE' ? 'No payment needed' : `${rupees(limits.price)} a month${ws.periodEnd ? ` · ${cancelled ? 'ends' : 'renews'} ${day(ws.periodEnd)}` : ''}`}</p>
+          <p className="mt-1 text-sm text-slate">
+            {current === 'FREE' ? 'No payment needed'
+              : !ws.razorpaySubId ? <>Complimentary{ws.periodEnd ? <> until {day(ws.periodEnd)}</> : ''}</>
+              : <>{rupees(limits.price)} a month{ws.periodEnd ? <><br />{cancelled ? 'Ends' : 'Renews'} on {day(ws.periodEnd)}</> : ''}</>}
+          </p>
           {canManage && current !== 'FREE' && !cancelled && ws.razorpaySubId && <div className="mt-4"><CancelButton until={day(ws.periodEnd)} /></div>}
         </div>
         <div className="space-y-5">

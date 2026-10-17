@@ -83,3 +83,6 @@ html.dark img { opacity: .95; }
 .live-dot { animation: live-dot 1.8s ease-in-out infinite; }
 @keyframes feed-in { from { opacity: 0; transform: translateX(-6px); background: rgb(var(--marigold) / .18); } to { opacity: 1; transform: none; background: transparent; } }
 .feed-in { animation: feed-in .6s ease-out both; }
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

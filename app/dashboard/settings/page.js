@@ -1,56 +1,49 @@
+import { prisma } from '@/lib/db';
 import { getContext } from '@/lib/context';
 import { PageHeader } from '@/components/ui';
 import WorkspaceSettings from '@/components/WorkspaceSettings';
 import { ThemePicker } from '@/components/Theme';
-import { appUrl } from '@/lib/platforms';
+import { Section, ProfileForm, PasswordForm, NotificationsForm, DeleteWorkspace } from '@/components/SettingsForms';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Settings() {
   const ctx = await getContext();
-  const base = appUrl();
+  const user = await prisma.user.findUnique({ where: { id: ctx.user.id } });
+  const isOwner = ctx.can('manageWorkspace');
+  const nav = [['profile', 'Profile'], ['password', 'Password'], ['notifications', 'Notifications'], ['appearance', 'Appearance'], ['workspace', 'Workspace'], ...(isOwner ? [['danger', 'Delete workspace']] : [])];
+
   return (
     <>
-      <PageHeader title="Settings" />
-      <div className="space-y-6">
-        <section className="card p-6">
-          <h2 className="font-display text-lg font-bold">Appearance</h2>
-          <p className="mt-1 text-sm text-slate">Choose how ReplyRelay looks on this device.</p>
-          <div className="mt-4"><ThemePicker /></div>
-        </section>
-
-        <WorkspaceSettings name={ctx.workspace.name} canEdit={ctx.can('manageWorkspace')} />
-
-        <section className="card p-6">
-          <h2 className="font-display text-lg font-bold">Your profile</h2>
-          <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
-            <div><dt className="text-slate">Name</dt><dd className="font-semibold">{ctx.user.name}</dd></div>
-            <div><dt className="text-slate">Sign-in</dt><dd className="font-semibold">{ctx.user.email || (ctx.user.facebookId ? 'Facebook' : 'Instagram')}</dd></div>
-            <div><dt className="text-slate">Role here</dt><dd className="font-semibold">{ctx.role.toLowerCase()}</dd></div>
-          </dl>
-        </section>
-
-        {ctx.can('manageWorkspace') && (
-          <section className="card p-6">
-            <h2 className="font-display text-lg font-bold">Meta app links</h2>
-            <p className="mt-1 text-sm text-slate">Paste these into your Meta developer app. They're also needed for App Review.</p>
-            <dl className="mt-4 space-y-3 text-sm">
-              {[
-                ['Instagram redirect URI', `${base}/api/instagram/callback`],
-                ['Facebook redirect URI', `${base}/api/facebook/callback`],
-                ['Instagram webhook', `${base}/api/webhooks/instagram`],
-                ['Facebook webhook', `${base}/api/webhooks/facebook`],
-                ['Privacy Policy URL', `${base}/privacy`],
-                ['Terms of Service URL', `${base}/terms`],
-                ['Health check (uptime monitor)', `${base}/api/health`],
-                ['Razorpay webhook', `${base}/api/billing/webhook`],
-                ['Data deletion URL', `${base}/data-deletion`],
-              ].map(([k, v]) => (
-                <div key={k} className="grid gap-1 sm:grid-cols-[200px_1fr]"><dt className="font-semibold">{k}</dt><dd><code className="break-all rounded bg-canvas px-2 py-1">{v}</code></dd></div>
-              ))}
-            </dl>
-          </section>
-        )}
+      <PageHeader title="Settings" description="Your profile, sign-in, notifications and this workspace." />
+      <div className="grid gap-8 lg:grid-cols-[200px_1fr]">
+        <nav aria-label="Settings sections" className="hidden lg:block">
+          <ul className="sticky top-8 space-y-0.5 text-sm">
+            {nav.map(([id, label]) => (
+              <li key={id}><a href={`#${id}`} className={`block rounded-lg px-3 py-2 font-medium text-slate transition-colors hover:bg-surface hover:text-ink ${id === 'danger' ? 'hover:text-bad' : ''}`}>{label}</a></li>
+            ))}
+          </ul>
+        </nav>
+        <div className="min-w-0 space-y-6">
+          <Section id="profile" title="Profile" description="How your name appears to your team.">
+            <ProfileForm name={user.name} email={user.email} role={ctx.role.toLowerCase()} />
+          </Section>
+          <Section id="password" title="Password" description="Use at least 8 characters.">
+            <PasswordForm hasPassword={Boolean(user.email && user.passwordHash)} />
+          </Section>
+          <Section id="notifications" title="Email notifications" description={user.email ? `Sent to ${user.email}.` : null}>
+            <NotificationsForm hasEmail={Boolean(user.email)} initial={{ notifyReconnect: user.notifyReconnect, notifyBilling: user.notifyBilling }} />
+          </Section>
+          <Section id="appearance" title="Appearance" description="Choose how ReplyRelay looks on this device.">
+            <ThemePicker />
+          </Section>
+          <div id="workspace" className="scroll-mt-8"><WorkspaceSettings name={ctx.workspace.name} canEdit={isOwner} /></div>
+          {isOwner && (
+            <Section id="danger" title="Delete workspace" tone="danger">
+              <DeleteWorkspace name={ctx.workspace.name} />
+            </Section>
+          )}
+        </div>
       </div>
     </>
   );

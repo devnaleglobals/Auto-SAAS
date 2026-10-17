@@ -29,6 +29,7 @@ export default function Sidebar({ user, workspace, workspaces, role, isAdmin, pl
   const path = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [menu, setMenu] = useState(false);
   const active = (href) => (href === '/dashboard' ? path === href : path.startsWith(href));
 
   async function switchTo(id) {
@@ -59,7 +60,7 @@ export default function Sidebar({ user, workspace, workspaces, role, isAdmin, pl
           <span>Search or jump to…</span><kbd className="rounded bg-white/10 px-1.5 py-0.5 text-[11px] font-semibold">Ctrl K</kbd>
         </button>
       </div>
-      <nav className="mt-4 flex-1 space-y-5 overflow-y-auto px-3" aria-label="Main">
+      <nav className="no-scrollbar mt-4 flex-1 space-y-4 overflow-y-auto px-3" aria-label="Main">
         {GROUPS.map(([title, hrefs]) => (
           <div key={title}>
             <p className="px-3 pb-1.5 text-xs font-semibold text-white/40">{title}</p>
@@ -74,13 +75,6 @@ export default function Sidebar({ user, workspace, workspaces, role, isAdmin, pl
           </div>
         ))}
       </nav>
-      {isAdmin && (
-        <div className="px-3 pb-3">
-          <Link href="/admin" className="flex items-center justify-between rounded-lg bg-marigold/15 px-3 py-2 text-sm font-semibold text-marigold transition-colors hover:bg-marigold/25">
-            Platform admin <span aria-hidden>↗</span>
-          </Link>
-        </div>
-      )}
       {plan && (
         <div className="mx-3 mb-3 rounded-lg border border-white/10 p-3">
           <div className="flex items-center justify-between text-xs">
@@ -94,15 +88,32 @@ export default function Sidebar({ user, workspace, workspaces, role, isAdmin, pl
           {plan.canUpgrade && <Link href="/dashboard/billing" onClick={() => setOpen(false)} className="mt-2 block rounded-md bg-marigold px-2 py-1.5 text-center text-xs font-semibold text-navy transition-colors hover:bg-marigoldDark">Upgrade plan</Link>}
         </div>
       )}
-      <div className="flex items-center gap-3 border-t border-white/10 px-4 py-4">
-        <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-marigold font-display text-sm font-bold text-navy">{(user.name || '?').trim().charAt(0).toUpperCase()}</span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-white">{user.name}</p>
-          <p className="truncate text-xs text-white/55">{user.email || 'Social sign-in'}</p>
-          <p className="text-xs capitalize text-white/40">{role.toLowerCase()}</p>
-        </div>
-        <ThemeToggle />
-        <form action="/api/auth/logout" method="post"><button className="rounded-md px-2 py-1 text-xs font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white">Log out</button></form>
+      <div className="relative border-t border-white/10 p-3">
+        {menu && (
+          <>
+            <div className="fixed inset-0 z-30" onClick={() => setMenu(false)} aria-hidden />
+            <div role="menu" className="absolute bottom-full left-3 right-3 z-40 mb-2 animate-dialog-in overflow-hidden rounded-xl border border-line bg-surface py-1 text-sm text-ink shadow-pop">
+              <div className="border-b border-line px-4 py-3">
+                <p className="font-semibold">{user.name}</p>
+                <p className="break-all text-xs text-slate">{user.email || 'Signed in with Instagram or Facebook'}</p>
+                <p className="mt-1 text-xs capitalize text-slate">{role.toLowerCase()} of {workspace.name}</p>
+              </div>
+              <Link role="menuitem" href="/dashboard/settings" onClick={() => { setMenu(false); setOpen(false); }} className="block px-4 py-2 hover:bg-canvas">Profile and settings</Link>
+              <div className="flex items-center justify-between px-4 py-1.5"><span>Theme</span><span className="rounded-md bg-navy"><ThemeToggle /></span></div>
+              {isAdmin && <Link role="menuitem" href="/admin" className="block px-4 py-2 hover:bg-canvas">Platform admin</Link>}
+              <form action="/api/auth/logout" method="post" className="border-t border-line"><button role="menuitem" className="block w-full px-4 py-2 text-left text-bad hover:bg-bad/5">Log out</button></form>
+            </div>
+          </>
+        )}
+        <button type="button" onClick={() => setMenu(!menu)} aria-expanded={menu} aria-haspopup="menu"
+          className="flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-white/5">
+          <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-marigold font-display text-sm font-bold text-navy">{(user.name || '?').trim().charAt(0).toUpperCase()}</span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold text-white">{user.name}</span>
+            <span className="block truncate text-xs text-white/55">{user.email || 'Social sign-in'}</span>
+          </span>
+          <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-white/50 transition-transform ${menu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="m6 15 6-6 6 6" /></svg>
+        </button>
       </div>
     </div>
   );
