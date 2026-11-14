@@ -16,6 +16,8 @@ model User {
   lastLoginAt  DateTime?
   notifyReconnect Boolean  @default(true) // email when an account stops working
   notifyBilling   Boolean  @default(true) // email about payments and plan changes
+  sessionVersion  Int      @default(0) // bumped to sign out every device (password change, "log out everywhere")
+  termsAcceptedAt DateTime? // when the person accepted the Terms and Privacy Policy
   createdAt    DateTime     @default(now())
   memberships  Membership[]
   auditLogs    AuditLog[]
@@ -107,6 +109,7 @@ model Channel {
   connectedAt    DateTime     @default(now())
   automations    Automation[]
   leads          Lead[]
+  optOuts        ContactOptOut[]
 
   @@unique([platform, externalId])
 }
@@ -336,4 +339,35 @@ model Setting {
   key       String   @id
   value     Json
   updatedAt DateTime @updatedAt
+}
+
+// People who replied STOP: no more automatic messages from this account until they message again.
+model ContactOptOut {
+  channelId String
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  contactId String
+  createdAt DateTime @default(now())
+
+  @@id([channelId, contactId])
+}
+
+// Fixed-window counters for login, signup and password-reset attempts.
+model RateLimit {
+  key     String   @id
+  count   Int      @default(0)
+  resetAt DateTime
+
+  @@index([resetAt])
+}
+
+// Data deletion requests received from Meta (Facebook / Instagram data deletion callback).
+model DeletionRequest {
+  id         String    @id @default(cuid())
+  code       String    @unique // confirmation code shown to the person
+  platform   String
+  externalId String // app-scoped user ID from Meta
+  status     String    @default("RECEIVED") // RECEIVED | COMPLETED | NOT_FOUND
+  detail     String?
+  createdAt  DateTime  @default(now())
+  completedAt DateTime?
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireApi, audit } from '@/lib/context';
+import { deleteWorkspace } from '@/lib/account';
 
 export async function PATCH(req) {
   const [ctx, err] = await requireApi('manageWorkspace');
@@ -21,7 +22,7 @@ export async function DELETE(req) {
   if (ctx.workspace.razorpaySubId && ['active', 'authenticated', 'pending'].includes(ctx.workspace.subStatus)) {
     return NextResponse.json({ error: 'Cancel your paid plan on the Billing page first, so you aren’t charged again.' }, { status: 409 });
   }
-  await prisma.workspace.delete({ where: { id: ctx.workspace.id } });
+  await deleteWorkspace(ctx.workspace.id); // also stops Meta webhooks for its accounts
   const res = NextResponse.json({ ok: true });
   res.cookies.delete('rr_ws');
   return res;

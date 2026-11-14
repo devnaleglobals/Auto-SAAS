@@ -6,6 +6,9 @@ import PlatformIcon from './PlatformIcon';
 import ChatDemo from './ChatDemo';
 import { Spinner } from './Feedback';
 
+// Only same-site paths, so a crafted link can't send people to another website after they sign in.
+const safeNext = (p) => (typeof p === 'string' && /^\/(?![\/\\])/.test(p) && !/[\r\n]/.test(p) ? p : null);
+
 const loginErrors = {
   denied: 'Sign-in was cancelled. Try again and select Allow.',
   state: 'The sign-in link expired. Try again.',
@@ -22,18 +25,19 @@ export default function AuthForm({ mode }) {
   const [busy, setBusy] = useState(false);
   const signup = mode === 'signup';
   const socialError = loginErrors[params.get('connect')];
-  const nextParam = params.get('next');
+  const nextParam = safeNext(params.get('next'));
   const q = nextParam ? `?next=${encodeURIComponent(nextParam)}` : '';
 
   async function submit(e) {
     e.preventDefault();
     setBusy(true); setError('');
     const body = Object.fromEntries(new FormData(e.currentTarget));
+    if (signup) body.acceptTerms = body.acceptTerms === 'on';
     const res = await fetch(`/api/auth/${mode}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({ error: 'Something went wrong. Try again.' }));
     setBusy(false);
     if (!res.ok) return setError(data.error);
-    router.push(params.get('next') || '/dashboard');
+    router.push(nextParam || '/dashboard');
     router.refresh();
   }
 
@@ -60,6 +64,12 @@ export default function AuthForm({ mode }) {
               <div><label className="label" htmlFor="email">Email</label><input id="email" name="email" type="email" required className="field" /></div>
               <div><label className="label" htmlFor="password">Password</label><input id="password" name="password" type="password" minLength={8} required className="field" />{signup ? <p className="hint">At least 8 characters.</p> : <p className="hint"><Link href="/forgot-password" className="underline">Forgot password?</Link></p>}</div>
             </div>
+            {signup && (
+              <label className="mt-5 flex items-start gap-2.5 text-sm text-slate">
+                <input type="checkbox" name="acceptTerms" required className="mt-0.5 h-4 w-4 shrink-0 accent-[#141B2E]" />
+                <span>I agree to the <Link href="/terms" className="underline" target="_blank">Terms of Service</Link> and <Link href="/privacy" className="underline" target="_blank">Privacy Policy</Link>.</span>
+              </label>
+            )}
             {error && <p role="alert" className="mt-4 text-sm font-medium text-bad">{error}</p>}
             <button disabled={busy} className="btn-primary mt-6 w-full">{busy && <Spinner />}{signup ? 'Create account' : 'Log in'}</button>
           </form>
@@ -68,7 +78,7 @@ export default function AuthForm({ mode }) {
           {signup ? <>Already have an account? <Link className="font-semibold text-ink underline" href={`/login${q}`}>Log in</Link></>
                   : <>New here? <Link className="font-semibold text-ink underline" href={`/signup${q}`}>Create an account</Link></>}
         </p>
-        <p className="mt-6 text-xs text-slate">By continuing you agree to our <Link href="/privacy" className="underline">Privacy Policy</Link>.</p>
+        <p className="mt-6 text-xs text-slate">By continuing with Instagram or Facebook you agree to our <Link href="/terms" className="underline">Terms of Service</Link> and <Link href="/privacy" className="underline">Privacy Policy</Link>.</p>
       </div>
       </div>
       <aside className="relative hidden flex-col justify-center overflow-hidden bg-navy px-12 py-12 lg:flex">

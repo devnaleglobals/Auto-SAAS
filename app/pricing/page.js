@@ -7,9 +7,9 @@ export const metadata = { title: 'Pricing — ReplyRelay', description: 'Simple 
 const FAQ = [
   ['What counts as a message?', 'Every private message, conversation message, reminder and public comment reply ReplyRelay sends. Hiding a spam comment doesn’t count.'],
   ['What happens if I reach my limit?', 'Automations pause until the 1st of next month, or until you upgrade. Nothing is lost, and we show a warning before you get there.'],
-  ['Can I cancel anytime?', 'Yes. Cancel from the Billing page and keep your plan until the end of the month you paid for. No questions asked.'],
+  ['Can I cancel anytime?', 'Yes. Cancel from the Billing page and keep your plan until the end of the month you paid for. See our refund and cancellation policy for details.'],
   ['How do I pay?', 'Through Razorpay with UPI autopay, debit or credit cards. Renewals are automatic and you get an invoice each month.'],
-  ['Is it safe for my Instagram account?', 'Yes. ReplyRelay uses Meta’s official API, the same one used by the biggest tools, and only replies to people who commented, replied or messaged you. We never ask for your Instagram password.'],
+  ['Is it safe for my Instagram account?', 'Yes. ReplyRelay uses Meta’s official, approved API and only replies to people who commented, replied or messaged you. We never ask for your Instagram password.'],
   ['Which accounts work?', 'Instagram Business and Creator accounts, and Facebook Pages. Personal Instagram accounts can switch to Creator for free in settings.'],
 ];
 
@@ -20,6 +20,7 @@ export default function Pricing() {
       <section className="mx-auto max-w-6xl px-6 pb-16 pt-6">
         <h1 className="max-w-2xl font-display text-4xl font-extrabold tracking-[-0.02em] md:text-5xl">Simple plans, in rupees.</h1>
         <p className="mt-4 max-w-xl text-base text-slate">Every plan has every feature. You only choose how many messages, accounts and team members you need. Start free, no card required.</p>
+        <p className="mt-2 text-xs text-slate">All prices are in Indian rupees (INR), billed monthly. Applicable GST is shown on your invoice. <Link href="/refunds" className="underline">Refund &amp; cancellation policy</Link>.</p>
 
         <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {Object.entries(PLANS).map(([key, p]) => (

@@ -23,6 +23,8 @@ export function PublicFooter() {
         <Link href="/contact" className="hover:text-ink">Contact</Link>
         <Link href="/terms" className="hover:text-ink">Terms</Link>
         <Link href="/privacy" className="hover:text-ink">Privacy</Link>
+        <Link href="/refunds" className="hover:text-ink">Refunds &amp; cancellation</Link>
+        <Link href="/delivery" className="hover:text-ink">Service delivery</Link>
         <Link href="/data-deletion" className="hover:text-ink">Delete your data</Link>
       </span>
     </footer>

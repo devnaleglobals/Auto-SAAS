@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { getContext } from '@/lib/context';
+import { requireContext } from '@/lib/context';
 import { PageHeader, Empty, fmtDate } from '@/components/ui';
 
 export const dynamic = 'force-dynamic';
@@ -13,7 +13,7 @@ const LABELS = {
 };
 
 export default async function Activity() {
-  const ctx = await getContext();
+  const ctx = await requireContext();
   const logs = await prisma.auditLog.findMany({
     where: { workspaceId: ctx.workspace.id }, orderBy: { createdAt: 'desc' }, take: 200, include: { user: { select: { name: true } } },
   });

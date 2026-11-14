@@ -1,12 +1,12 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
-import { getContext } from '@/lib/context';
+import { requireContext } from '@/lib/context';
 import { PageHeader } from '@/components/ui';
 import WelcomeMenuEditor from '@/components/WelcomeMenuEditor';
 
 export default async function WelcomeMenu({ params }) {
-  const ctx = await getContext();
+  const ctx = await requireContext();
   if (!ctx.can('manageAccounts')) redirect('/dashboard/accounts');
   const { id } = await params;
   const channel = await prisma.channel.findFirst({ where: { id, workspaceId: ctx.workspace.id } });

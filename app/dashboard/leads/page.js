@@ -1,12 +1,12 @@
 import { prisma } from '@/lib/db';
-import { getContext } from '@/lib/context';
+import { requireContext } from '@/lib/context';
 import { PageHeader, Empty, fmtDate, fmtNum } from '@/components/ui';
 import PlatformIcon from '@/components/PlatformIcon';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Leads({ searchParams }) {
-  const ctx = await getContext();
+  const ctx = await requireContext();
   const sp = await searchParams;
   const q = sp?.q?.trim();
   const where = {

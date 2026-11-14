@@ -11,8 +11,9 @@ const verifyToken = () => process.env.WEBHOOK_VERIFY_TOKEN || process.env.IG_WEB
 // Meta verification handshake
 export async function GET(req) {
   const p = new URL(req.url).searchParams;
-  if (p.get('hub.mode') === 'subscribe' && p.get('hub.verify_token') === verifyToken()) {
-    return new Response(p.get('hub.challenge'), { status: 200 });
+  const expected = verifyToken();
+  if (expected && p.get('hub.mode') === 'subscribe' && p.get('hub.verify_token') === expected) {
+    return new Response(String(p.get('hub.challenge') || '').replace(/[^\w.-]/g, ''), { status: 200, headers: { 'Content-Type': 'text/plain' } });
   }
   return new Response('Forbidden', { status: 403 });
 }
@@ -23,7 +24,8 @@ export async function POST(req) {
   if (!verifyMetaSignature(raw, req.headers.get('x-hub-signature-256'), platform.webhookSecret())) {
     return new Response('Invalid signature', { status: 401 });
   }
-  const body = JSON.parse(raw);
+  let body;
+  try { body = JSON.parse(raw); } catch { return new Response('Bad JSON', { status: 400 }); }
   await handleWebhookItems(PLATFORM, platform.parseWebhook(body));
   await handleMessagingItems(PLATFORM, platform.parseMessaging(body));
   return NextResponse.json({ ok: true });

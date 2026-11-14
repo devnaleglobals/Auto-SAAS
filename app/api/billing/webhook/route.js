@@ -10,7 +10,8 @@ export const dynamic = 'force-dynamic';
 export async function POST(req) {
   const raw = await req.text();
   if (!verifyWebhook(raw, req.headers.get('x-razorpay-signature'))) return new Response('Invalid signature', { status: 401 });
-  const body = JSON.parse(raw);
+  let body;
+  try { body = JSON.parse(raw); } catch { return new Response('Bad JSON', { status: 400 }); }
   const sub = body.payload?.subscription?.entity;
   if (!sub?.id) return NextResponse.json({ ok: true });
 

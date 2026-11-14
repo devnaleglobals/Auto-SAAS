@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getContext } from '@/lib/context';
+import { requireApi } from '@/lib/context';
 import { decrypt } from '@/lib/crypto';
 import { getPlatform } from '@/lib/platforms';
 
-// Owner-only diagnostics for one automation.
+// Diagnostics for one automation (members who can edit automations).
 export async function GET(req, { params }) {
-  const ctx = await getContext();
-  if (!ctx) return NextResponse.json({ error: 'Log in first' }, { status: 401 });
+  const [ctx, err] = await requireApi('editAutomations');
+  if (err) return err;
   const { id } = await params;
   const a = await prisma.automation.findFirst({ where: { id, workspaceId: ctx.workspace.id }, include: { channel: true } });
   if (!a) return NextResponse.json({ error: 'Not found' }, { status: 404 });

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
-import { getContext } from '@/lib/context';
+import { requireContext } from '@/lib/context';
 import Builder from '@/components/Builder';
 import PlatformIcon from '@/components/PlatformIcon';
 import { PageHeader } from '@/components/ui';
@@ -18,7 +18,7 @@ function Trail({ platform, type }) {
 }
 
 export default async function NewAutomation({ searchParams }) {
-  const ctx = await getContext();
+  const ctx = await requireContext();
   if (!ctx.can('editAutomations')) redirect('/dashboard/automations');
   const all = await prisma.channel.findMany({
     where: { workspaceId: ctx.workspace.id },

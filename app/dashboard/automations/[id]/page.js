@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
-import { getContext } from '@/lib/context';
+import { requireContext } from '@/lib/context';
 import { getPlatform } from '@/lib/platforms';
 import { Stat, StatGrid, fmtDate, fmtNum, pct } from '@/components/ui';
 import StatusBadge from '@/components/StatusBadge';
@@ -13,7 +13,7 @@ import { typeInfo } from '@/lib/automationTypes';
 export const dynamic = 'force-dynamic';
 
 export default async function AutomationDetail({ params, searchParams }) {
-  const ctx = await getContext();
+  const ctx = await requireContext();
   const { id } = await params;
   const sp = await searchParams;
   const a = await prisma.automation.findFirst({ where: { id, workspaceId: ctx.workspace.id }, include: { channel: true } });

@@ -1,17 +1,18 @@
 import { prisma } from '@/lib/db';
-import { getContext } from '@/lib/context';
+import { requireContext } from '@/lib/context';
 import { PageHeader } from '@/components/ui';
 import WorkspaceSettings from '@/components/WorkspaceSettings';
 import { ThemePicker } from '@/components/Theme';
-import { Section, ProfileForm, PasswordForm, NotificationsForm, DeleteWorkspace } from '@/components/SettingsForms';
+import { Section, ProfileForm, PasswordForm, NotificationsForm, DeleteWorkspace, PrivacyData } from '@/components/SettingsForms';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Settings() {
-  const ctx = await getContext();
+  const ctx = await requireContext();
   const user = await prisma.user.findUnique({ where: { id: ctx.user.id } });
   const isOwner = ctx.can('manageWorkspace');
-  const nav = [['profile', 'Profile'], ['password', 'Password'], ['notifications', 'Notifications'], ['appearance', 'Appearance'], ['workspace', 'Workspace'], ...(isOwner ? [['danger', 'Delete workspace']] : [])];
+  const ownsWorkspaces = ctx.memberships.some((m) => m.role === 'OWNER');
+  const nav = [['profile', 'Profile'], ['password', 'Password'], ['notifications', 'Notifications'], ['appearance', 'Appearance'], ['workspace', 'Workspace'], ['privacy', 'Privacy & data'], ...(isOwner ? [['danger', 'Delete workspace']] : [])];
 
   return (
     <>
@@ -38,6 +39,9 @@ export default async function Settings() {
             <ThemePicker />
           </Section>
           <div id="workspace" className="scroll-mt-8"><WorkspaceSettings name={ctx.workspace.name} canEdit={isOwner} /></div>
+          <Section id="privacy" title="Privacy & data" description={<>Your rights over your data are explained in our <a href="/privacy" className="underline">Privacy Policy</a>.</>}>
+            <PrivacyData hasPassword={Boolean(user.email && user.passwordHash)} ownsWorkspaces={ownsWorkspaces} />
+          </Section>
           {isOwner && (
             <Section id="danger" title="Delete workspace" tone="danger">
               <DeleteWorkspace name={ctx.workspace.name} />

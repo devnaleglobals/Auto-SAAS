@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { getContext } from '@/lib/context';
+import { requireContext } from '@/lib/context';
 import { PageHeader, Notice, fmtNum } from '@/components/ui';
 import { PLANS, PAID, FEATURES_ALL, effectivePlan, usageThisMonth, rupees } from '@/lib/plans';
 import { billingConfigured } from '@/lib/razorpay';
@@ -22,7 +22,7 @@ function Meter({ label, used, limit }) {
 }
 
 export default async function Billing({ searchParams }) {
-  const ctx = await getContext();
+  const ctx = await requireContext();
   const sp = await searchParams;
   const ws = await prisma.workspace.findUnique({ where: { id: ctx.workspace.id } });
   const current = effectivePlan(ws);

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cronAuthorized, unauthorized } from '@/lib/cron';
 import { prisma } from '@/lib/db';
 import { checkAutomation } from '@/lib/engine';
 import { checkInbox, hasFlow, runFollowUps } from '@/lib/flows';
@@ -27,10 +28,7 @@ async function runPool(tasks, started) {
 // Sends due follow-up reminders, checks comments for every running comment automation (backup to webhooks),
 // and reads recent DMs for accounts with flows (backup before message webhooks are approved).
 export async function GET(req) {
-  const key = new URL(req.url).searchParams.get('key');
-  if (req.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}` && key !== process.env.CRON_SECRET) {
-    return new Response('Unauthorized', { status: 401 });
-  }
+  if (!cronAuthorized(req)) return unauthorized();
   const started = Date.now();
   const active = await prisma.automation.findMany({
     where: { status: 'ACTIVE', channel: { needsReconnect: false } },

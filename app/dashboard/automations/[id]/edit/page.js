@@ -1,10 +1,10 @@
 import { notFound, redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
-import { getContext } from '@/lib/context';
+import { requireContext } from '@/lib/context';
 import Builder from '@/components/Builder';
 
 export default async function EditAutomation({ params }) {
-  const ctx = await getContext();
+  const ctx = await requireContext();
   const { id } = await params;
   if (!ctx.can('editAutomations')) redirect(`/dashboard/automations/${id}`);
   const a = await prisma.automation.findFirst({ where: { id, workspaceId: ctx.workspace.id }, include: { channel: true } });

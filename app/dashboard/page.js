@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
-import { getContext } from '@/lib/context';
+import { requireContext } from '@/lib/context';
 import { Notice, Empty, fmtNum } from '@/components/ui';
 import DailyChart from '@/components/DailyChart';
 import StatusBadge from '@/components/StatusBadge';
@@ -25,7 +25,7 @@ function greeting() {
 }
 
 export default async function Overview({ searchParams }) {
-  const ctx = await getContext();
+  const ctx = await requireContext();
   const sp = await searchParams;
   const ws = ctx.workspace.id;
   const since = new Date(Date.now() - 29 * 86400000); since.setHours(0, 0, 0, 0);

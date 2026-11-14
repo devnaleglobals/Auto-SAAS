@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { getContext } from '@/lib/context';
+import { requireContext } from '@/lib/context';
 import { PageHeader, Notice } from '@/components/ui';
 import AccountCard from '@/components/AccountCard';
 import PlatformIcon from '@/components/PlatformIcon';
@@ -20,7 +20,7 @@ const notices = {
 };
 
 export default async function Accounts({ searchParams }) {
-  const ctx = await getContext();
+  const ctx = await requireContext();
   const sp = await searchParams;
   const channels = await prisma.channel.findMany({
     where: { workspaceId: ctx.workspace.id }, orderBy: { connectedAt: 'asc' },

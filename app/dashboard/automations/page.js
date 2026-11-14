@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
-import { getContext } from '@/lib/context';
+import { requireContext } from '@/lib/context';
 import { PageHeader, Empty, fmtNum } from '@/components/ui';
 import StatusBadge from '@/components/StatusBadge';
 import PlatformIcon from '@/components/PlatformIcon';
@@ -9,7 +9,7 @@ import { typeInfo } from '@/lib/automationTypes';
 export const dynamic = 'force-dynamic';
 
 export default async function AutomationsList({ searchParams }) {
-  const ctx = await getContext();
+  const ctx = await requireContext();
   const sp = await searchParams;
   const q = sp?.q?.trim();
   const status = ['ACTIVE', 'PAUSED', 'COMPLETED'].includes(sp?.status) ? sp.status : undefined;

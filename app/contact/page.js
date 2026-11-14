@@ -5,7 +5,7 @@ export const metadata = { title: 'Contact — ReplyRelay' };
 
 export default function Contact() {
   return (
-    <LegalPage title="Contact us" updated="13 October 2026">
+    <LegalPage title="Contact us" updated="14 November 2026">
       <p>ReplyRelay is a product of {operatedBy()}.</p>
       <dl className="grid gap-4 sm:grid-cols-[160px_1fr]">
         <dt className="font-semibold">Business</dt><dd>{COMPANY.name}</dd>
@@ -16,6 +16,14 @@ export default function Contact() {
         {COMPANY.gstin && <><dt className="font-semibold">GSTIN</dt><dd>{COMPANY.gstin}</dd></>}
       </dl>
       <p>We reply to support emails within one working day.</p>
+
+      <h2>Grievance Officer</h2>
+      <p>
+        For complaints about the service, content or how we handle personal data (Information Technology Act, 2000 and Digital Personal Data Protection Act, 2023):<br />
+        {COMPANY.grievanceName && <>{COMPANY.grievanceName}, </>}{COMPANY.name}, {COMPANY.address}<br />
+        <a className="underline" href={`mailto:${COMPANY.grievanceEmail}`}>{COMPANY.grievanceEmail}</a>
+      </p>
+      <p>We acknowledge complaints within 24 hours and resolve them within 15 days.</p>
     </LegalPage>
   );
 }

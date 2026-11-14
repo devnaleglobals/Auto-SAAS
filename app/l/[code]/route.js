@@ -6,6 +6,7 @@ import { stepsOf } from '@/lib/flows';
 //  - <trackCode>.<stepId>.<i>  : a link button inside a conversation
 export async function GET(req, { params }) {
   const { code } = await params;
+  if (!/^[\w.-]{4,120}$/.test(code)) return new Response('This link is no longer available.', { status: 404 });
 
   if (code.includes('.')) {
     const [trackCode, stepId, idx] = code.split('.');
@@ -20,7 +21,7 @@ export async function GET(req, { params }) {
 
   const event = await prisma.event.findUnique({ where: { linkCode: code }, include: { automation: { select: { linkUrl: true, flow: true, type: true, requireFollow: true, dmMessage: true } } } });
   const target = event?.automation?.linkUrl;
-  if (!target) return new Response('This link is no longer available.', { status: 404 });
+  if (!target || !/^https?:\/\//i.test(target)) return new Response('This link is no longer available.', { status: 404 });
   await prisma.event.update({
     where: { id: event.id },
     data: { clickCount: { increment: 1 }, ...(event.firstClickedAt ? {} : { firstClickedAt: new Date() }) },

@@ -116,3 +116,53 @@ export function DeleteWorkspace({ name }) {
     </form>
   );
 }
+
+// Download a copy of your data, sign out other devices, or delete your account.
+export function PrivacyData({ hasPassword, ownsWorkspaces }) {
+  const router = useRouter();
+  const { toast, confirm } = useFeedback();
+  const [busy, setBusy] = useState('');
+  const [v, setV] = useState({ confirm: '', password: '' });
+
+  async function logoutAll() {
+    const ok = await confirm({ title: 'Log out of all other devices?', body: 'Everyone signed in to your account on another browser or phone is signed out. You stay signed in here.', confirmLabel: 'Log out others' });
+    if (!ok) return;
+    setBusy('sessions');
+    const [res, d] = await send('/api/profile/sessions', 'POST', {});
+    setBusy('');
+    toast(res ? 'Other devices are signed out' : d.error, res ? 'ok' : 'bad');
+  }
+
+  async function del(e) {
+    e.preventDefault();
+    setBusy('delete');
+    const [ok, d] = await send('/api/profile', 'DELETE', v);
+    setBusy('');
+    if (!ok) return toast(d.error, 'bad');
+    router.push('/'); router.refresh();
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div><p className="text-sm font-semibold">Download your data</p><p className="text-sm text-slate">Your profile, workspaces you own, automations and payments, as a JSON file.</p></div>
+        <a href="/api/profile/export" className="btn-ghost">Download</a>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-6">
+        <div><p className="text-sm font-semibold">Signed-in devices</p><p className="text-sm text-slate">Sign out everywhere else, for example after using a shared computer.</p></div>
+        <button onClick={logoutAll} disabled={busy === 'sessions'} className="btn-ghost">{busy === 'sessions' && <Spinner />}Log out other devices</button>
+      </div>
+      <form onSubmit={del} className="space-y-3 border-t border-line pt-6">
+        <p className="text-sm font-semibold text-bad">Delete your account</p>
+        <p className="text-sm">
+          This permanently deletes your ReplyRelay account{ownsWorkspaces ? ', every workspace you own (with its connected accounts, automations, conversations, leads and history), and cancels paid plans on those workspaces right away' : ''}. Workspaces you were invited to stay with their owners. It can’t be undone.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <input aria-label="Type DELETE to confirm" placeholder="Type DELETE" className="field max-w-[160px]" value={v.confirm} onChange={(e) => setV({ ...v, confirm: e.target.value })} autoComplete="off" />
+          {hasPassword && <input aria-label="Your password" type="password" placeholder="Your password" autoComplete="current-password" className="field max-w-[200px]" value={v.password} onChange={(e) => setV({ ...v, password: e.target.value })} />}
+          <button disabled={busy === 'delete' || v.confirm.trim().toUpperCase() !== 'DELETE' || (hasPassword && !v.password)} className="btn-danger">{busy === 'delete' && <Spinner />}Delete my account</button>
+        </div>
+      </form>
+    </div>
+  );
+}
