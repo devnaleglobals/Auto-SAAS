@@ -10,7 +10,7 @@ export async function PATCH(req, { params }) {
   const { id } = await params;
   const ws = await prisma.workspace.findUnique({ where: { id } });
   if (!ws) return NextResponse.json({ error: 'Client not found.' }, { status: 404 });
-  const b = await req.json();
+  const b = await req.json().catch(() => ({}));
 
   switch (b.action) {
     case 'plan': {

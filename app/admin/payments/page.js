@@ -2,10 +2,12 @@ import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { PLANS, rupees } from '@/lib/plans';
 import { StatGrid, Stat, fmtNum, fmtDate } from '@/components/ui';
+import { requireAdminPage } from '@/lib/admin';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPayments() {
+  await requireAdminPage(); // checked on every page, not only in the layout
   const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
   const [payments, all, month, failed] = await Promise.all([
     prisma.payment.findMany({ orderBy: { createdAt: 'desc' }, take: 300, include: { workspace: { select: { id: true, name: true } } } }),

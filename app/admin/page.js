@@ -4,10 +4,12 @@ import { platformStats } from '@/lib/adminStats';
 import { PLANS, rupees, effectivePlan } from '@/lib/plans';
 import { StatGrid, Stat, fmtNum, fmtDate } from '@/components/ui';
 import Bars from '@/components/Bars';
+import { requireAdminPage } from '@/lib/admin';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminOverview() {
+  await requireAdminPage(); // checked on every page, not only in the layout
   const s = await platformStats();
   const [recent, logs] = await Promise.all([
     prisma.workspace.findMany({ orderBy: { createdAt: 'desc' }, take: 8, include: { memberships: { where: { role: 'OWNER' }, include: { user: { select: { email: true, name: true } } } }, _count: { select: { channels: true } } } }),

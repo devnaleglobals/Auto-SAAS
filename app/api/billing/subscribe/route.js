@@ -10,7 +10,7 @@ export async function POST(req) {
   const [ctx, err] = await requireApi('manageWorkspace');
   if (err) return err;
   if (!billingConfigured()) return NextResponse.json({ error: 'Payments aren’t switched on yet.' }, { status: 503 });
-  const { plan } = await req.json();
+  const { plan } = await req.json().catch(() => ({}));
   if (!PAID.includes(plan) || !razorpayPlanId(plan)) return NextResponse.json({ error: 'Choose a plan.' }, { status: 400 });
 
   const ws = await prisma.workspace.findUnique({ where: { id: ctx.workspace.id } });

@@ -29,6 +29,9 @@ export async function POST(req) {
 
   switch (body.event) {
     case 'subscription.authenticated':
+      // Mandate set up, first charge not yet confirmed: record it, but don't grant the plan until "activated" or "charged".
+      data.subStatus = ws.subStatus === 'active' && ws.razorpaySubId === sub.id ? 'active' : 'authenticated';
+      break;
     case 'subscription.activated':
     case 'subscription.charged':
     case 'subscription.resumed':

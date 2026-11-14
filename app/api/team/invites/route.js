@@ -9,7 +9,7 @@ import { sendEmail } from '@/lib/notify';
 export async function POST(req) {
   const [ctx, err] = await requireApi('manageTeam');
   if (err) return err;
-  const { role, label, email } = await req.json();
+  const { role, label, email } = await req.json().catch(() => ({}));
   const to = String(email || '').trim().toLowerCase();
   if (to && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(to)) return NextResponse.json({ error: 'Check the email address.' }, { status: 400 });
   if (!['ADMIN', 'MEMBER', 'VIEWER'].includes(role)) return NextResponse.json({ error: 'Choose a role.' }, { status: 400 });

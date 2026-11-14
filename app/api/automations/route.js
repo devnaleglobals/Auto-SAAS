@@ -3,10 +3,13 @@ import { prisma } from '@/lib/db';
 import { requireApi, audit } from '@/lib/context';
 import { validateAutomation } from '@/lib/validate';
 
+// Only web links are stored (a javascript: link here would run when someone clicks “View post”).
+const webUrl = (u) => (typeof u === 'string' && /^https:\/\/\S+$/i.test(u.trim()) ? u.trim().slice(0, 1000) : null);
+
 export async function POST(req) {
   const [ctx, err] = await requireApi('editAutomations');
   if (err) return err;
-  const b = await req.json();
+  const b = await req.json().catch(() => ({}));
   const channel = await prisma.channel.findFirst({ where: { id: b.channelId, workspaceId: ctx.workspace.id } });
   if (!channel) return NextResponse.json({ error: 'Choose a connected account.' }, { status: 400 });
   const [data, msg] = validateAutomation(b, { platform: channel.platform });
@@ -21,9 +24,9 @@ export async function POST(req) {
       createdById: ctx.user.id,
       channelId: channel.id,
       flow: data.flow ?? undefined,
-      mediaId: data.scope === 'POST' ? b.mediaId : null,
-      mediaPermalink: data.scope === 'POST' ? b.mediaPermalink || null : null,
-      mediaThumb: data.scope === 'POST' ? b.mediaThumb || null : null,
+      mediaId: data.scope === 'POST' ? String(b.mediaId).slice(0, 100) : null,
+      mediaPermalink: data.scope === 'POST' ? webUrl(b.mediaPermalink) : null,
+      mediaThumb: data.scope === 'POST' ? webUrl(b.mediaThumb) : null,
       mediaCaption: data.scope === 'POST' ? (b.mediaCaption || '').slice(0, 500) || null : null,
     },
   });

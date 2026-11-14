@@ -15,7 +15,7 @@ export async function PATCH(req, { params }) {
   if (err) return err;
   const a = await load(params, ctx);
   if (!a) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  const b = await req.json();
+  const b = await req.json().catch(() => ({}));
   const ch = await prisma.channel.findUnique({ where: { id: a.channelId }, select: { platform: true } });
 
   if (b.status && Object.keys(b).length === 1) {

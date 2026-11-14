@@ -23,7 +23,7 @@ export default async function Team() {
       {ctx.can('manageTeam') ? (
         <TeamManager members={rows} myRole={ctx.role} meId={ctx.user.id}
           seatsLeft={Math.max(0, seats - rows.length)}
-          invites={invites.map((i) => ({ id: i.id, label: i.label, role: i.role, expires: fmtDate(i.expiresAt), url: `${appUrl()}/invite/${i.token}` }))} />
+          invites={invites.map((i) => ({ id: i.id, label: i.label, role: i.role, expires: fmtDate(i.expiresAt), url: ctx.can('manageTeam') ? `${appUrl()}/invite/${i.token}` : null }))} />
       ) : (
         <div className="card overflow-x-auto">
           <table className="w-full text-sm">

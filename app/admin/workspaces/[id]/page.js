@@ -7,10 +7,12 @@ import { StatGrid, Stat, fmtNum, fmtDate } from '@/components/ui';
 import PlatformIcon from '@/components/PlatformIcon';
 import StatusBadge from '@/components/StatusBadge';
 import AdminWorkspaceActions from '@/components/AdminWorkspaceActions';
+import { requireAdminPage } from '@/lib/admin';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminWorkspace({ params }) {
+  await requireAdminPage(); // checked on every page, not only in the layout
   const { id } = await params;
   const ws = await prisma.workspace.findUnique({
     where: { id },

@@ -47,6 +47,14 @@ Everyone stays signed in after the update. Old password-reset links stop working
 | Missing CSP | Clickjacking/plugin/base-tag attacks | `frame-ancestors 'none'`, `object-src 'none'`, `base-uri`, `form-action` |
 | Cookies without `secure` in some places | Sent over HTTP | One cookie helper, secure in production |
 | Disconnecting an account left Meta webhooks subscribed | Meta kept sending data for that account | Unsubscribes at Meta before deleting |
+| Saved post link shown as "View post" wasn't checked | A team member could save a `javascript:` link that runs in an admin's browser when clicked (stored XSS) | Only `https://` links are saved and shown |
+| Pending invite links (including Admin invites) were sent to every member's browser | A Viewer could copy an Admin invite and join again as Admin | Only Owners/Admins receive invite links |
+| Admin pages checked access only in the shared layout | A crafted page request can skip a layout in Next.js | Every admin page checks admin access itself (tested: non-admins get 404) |
+| Razorpay "subscription.authenticated" granted the paid plan | Paid access before the first charge succeeded | Plan is granted on "activated"/"charged" (or verified checkout) |
+| Suspended workspaces still hid/deleted comments and answered DMs | Suspension didn't fully stop the client | Suspended workspaces do nothing |
+| Invalid email/phone after one retry was saved as the lead's email/phone | Bad data in Leads | Saved as an "unchecked" answer instead |
+| Malformed request bodies crashed some APIs with a 500 | Noisy errors | They return a clear 400 |
+| Email failures were silent | Hard to see why reset emails don't arrive | Vercel logs now show "Email not sent" with Resend's reason |
 
 ### Compliance (DPDP Act 2023, IT Act 2000, Meta Platform Terms, Razorpay)
 - **Right to erasure:** Settings → Privacy & data → Delete my account (deletes owned workspaces, unsubscribes Meta webhooks, cancels Razorpay immediately).

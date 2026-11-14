@@ -13,9 +13,9 @@ export async function PUT(req, { params }) {
   const channel = await prisma.channel.findFirst({ where: { id, workspaceId: ctx.workspace.id } });
   if (!channel) return NextResponse.json({ error: 'Account not found' }, { status: 404 });
 
-  const { items = [] } = await req.json();
+  const { items = [] } = await req.json().catch(() => ({}));
   const clean = [];
-  for (const it of items.slice(0, 4)) {
+  for (const it of (Array.isArray(items) ? items : []).slice(0, 4)) {
     const question = String(it.question || '').trim();
     if (!question && !it.automationId) continue;
     if (!question) return NextResponse.json({ error: 'Every menu item needs a question.' }, { status: 400 });

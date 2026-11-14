@@ -67,7 +67,7 @@ export default async function AutomationDetail({ params, searchParams }) {
             <p className="mt-2 flex flex-wrap gap-1.5"><span className="rounded-md bg-ink/5 px-2 py-0.5 text-xs font-semibold">{typeInfo(a.type, a.channel.platform)?.title}</span>{a.requireFollow && <span className="rounded-md bg-marigold/20 px-2 py-0.5 text-xs font-semibold">Follow required</span>}</p>
             <p className="mt-1 flex items-center gap-1.5 text-sm text-slate">
               <PlatformIcon platform={a.channel.platform} className="h-3.5 w-3.5" /> {handle} · {a.type === 'DM_FLOW' ? (a.channel.platform === 'FACEBOOK' ? 'Messenger' : 'direct messages') : a.type === 'STORY_REPLY' ? 'story replies' : a.type === 'STORY_MENTION' ? 'story mentions' : a.scope === 'ALL_POSTS' ? 'all posts' : 'one post'}
-              {a.mediaPermalink && <> · <a href={a.mediaPermalink} target="_blank" rel="noreferrer" className="underline">View post</a></>}
+              {/^https?:\/\//i.test(a.mediaPermalink || '') && <> · <a href={a.mediaPermalink} target="_blank" rel="noreferrer" className="underline">View post</a></>}
             </p>
             <p className="mt-3 text-sm">{a.type === 'COMMENT_MODERATION' ? <>Removes: <strong>{[...a.keywords.slice(0, 8), a.modHideLinks && 'links'].filter(Boolean).join(', ')}</strong></> : a.type === 'STORY_MENTION' ? 'Trigger: any story mention' : <>Trigger: {a.matchType === 'ANY' ? 'any comment' : <>{a.matchType === 'EXACT' ? 'exactly' : 'contains'} <strong>{a.keywords.join(', ')}</strong></>}</>}</p>
             <p className="text-sm text-slate">

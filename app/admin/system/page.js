@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import { fmtDate, fmtNum } from '@/components/ui';
 import AnnouncementForm from '@/components/AnnouncementForm';
 import { appUrl } from '@/lib/platforms';
+import { requireAdminPage } from '@/lib/admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,7 @@ const CHECKS = [
 ];
 
 export default async function AdminSystem() {
+  await requireAdminPage(); // checked on every page, not only in the layout
   const day = new Date(Date.now() - 86400000);
   const announcement = await prisma.setting.findUnique({ where: { key: 'announcement' } }).catch(() => null);
   let db = 'ok';

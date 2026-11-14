@@ -12,7 +12,7 @@ export async function PATCH(req, { params }) {
   if (err) return err;
   const m = await load(params, ctx);
   if (!m) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  const { role } = await req.json();
+  const { role } = await req.json().catch(() => ({}));
   if (!['ADMIN', 'MEMBER', 'VIEWER'].includes(role)) return NextResponse.json({ error: 'Invalid role.' }, { status: 400 });
   if (m.role === 'OWNER') return NextResponse.json({ error: "The owner's role can't be changed." }, { status: 400 });
   if ((role === 'ADMIN' || m.role === 'ADMIN') && ctx.role !== 'OWNER') return NextResponse.json({ error: 'Only the owner can change admins.' }, { status: 403 });

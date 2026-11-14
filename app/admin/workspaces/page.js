@@ -2,10 +2,12 @@ import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { PLANS, effectivePlan, usageThisMonth, limitsOf } from '@/lib/plans';
 import { fmtNum, fmtDate } from '@/components/ui';
+import { requireAdminPage } from '@/lib/admin';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminWorkspaces({ searchParams }) {
+  await requireAdminPage(); // checked on every page, not only in the layout
   const sp = await searchParams;
   const q = sp?.q?.trim();
   const status = sp?.status;

@@ -2,10 +2,12 @@ import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { fmtDate } from '@/components/ui';
 import StatusBadge from '@/components/StatusBadge';
+import { requireAdminPage } from '@/lib/admin';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminUsers({ searchParams }) {
+  await requireAdminPage(); // checked on every page, not only in the layout
   const sp = await searchParams;
   const q = sp?.q?.trim();
   const users = await prisma.user.findMany({

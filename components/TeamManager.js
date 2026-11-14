@@ -110,8 +110,8 @@ export default function TeamManager({ members, invites, myRole, meId, seatsLeft 
                     <td className="td"><StatusBadge s={i.role} /></td>
                     <td className="td text-slate">{i.expires}</td>
                     <td className="td"><span className="flex justify-end gap-2">
-                      <button onClick={() => copy(i.url)} className="btn-ghost btn-sm">Copy link</button>
-                      <button onClick={async () => { if (await api(`/api/team/invites/${i.id}`, 'DELETE')) toast('Invite cancelled'); }} className="btn-ghost btn-sm text-bad">Cancel</button>
+                      {i.url && <button onClick={() => copy(i.url)} className="btn-ghost btn-sm">Copy link</button>}
+                      {i.url && <button onClick={async () => { if (await api(`/api/team/invites/${i.id}`, 'DELETE')) toast('Invite cancelled'); }} className="btn-ghost btn-sm text-bad">Cancel</button>}
                     </span></td>
                   </tr>
                 ))}
