@@ -3,6 +3,11 @@
 @tailwind utilities;
 
 :root {
+  --font-display: 'Bricolage Grotesque Variable', system-ui, sans-serif;
+  --font-body: 'Manrope Variable', system-ui, sans-serif;
+}
+
+:root {
   color-scheme: light;
   --ink: 23 32 54;          /* #172036 text */
   --navy: 20 27 46;         /* #141B2E brand navy */

@@ -1,8 +1,7 @@
-import { Bricolage_Grotesque, Manrope } from 'next/font/google';
+// Fonts are bundled from npm (no download from Google during the build, which can fail on Vercel).
+import '@fontsource-variable/bricolage-grotesque';
+import '@fontsource-variable/manrope';
 import './globals.css';
-
-const display = Bricolage_Grotesque({ subsets: ['latin'], variable: '--font-display', weight: ['600', '700', '800'] });
-const body = Manrope({ subsets: ['latin'], variable: '--font-body' });
 
 export const metadata = {
   title: 'ReplyRelay — Instagram comment to DM automation',
@@ -14,7 +13,7 @@ const themeScript = `(function(){try{var t=localStorage.getItem('rr_theme')||'li
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable}`} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
       <body className="font-sans antialiased">{children}</body>
     </html>
