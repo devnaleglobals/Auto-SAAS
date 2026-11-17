@@ -8,6 +8,7 @@ import { StatGrid, Stat, fmtNum, fmtDate } from '@/components/ui';
 import PlatformIcon from '@/components/PlatformIcon';
 import StatusBadge from '@/components/StatusBadge';
 import AdminWorkspaceActions from '@/components/AdminWorkspaceActions';
+import AdminClientTeam from '@/components/AdminClientTeam';
 import { requireAdminPage } from '@/lib/admin';
 
 export const dynamic = 'force-dynamic';
@@ -45,7 +46,7 @@ export default async function AdminWorkspace({ params }) {
 
       <div className="mt-6"><StatGrid>
         <Stat label="Plan" value={PLANS[plan].name} sub={onTrial(ws) ? `Free trial until ${fmtDate(ws.trialEndsAt)}` : ws.periodEnd ? `${ws.razorpaySubId ? `Razorpay (${ws.subStatus})` : 'Complimentary'} until ${fmtDate(ws.periodEnd)}` : 'No paid period'} />
-        <Stat label="Messages this month" value={fmtNum(usageThisMonth(ws))} sub={`of ${fmtNum(limitsOf(ws).messages)}`} />
+        <Stat label="Messages this month" value={fmtNum(usageThisMonth(ws))} sub={`of ${fmtNum(limitsOf(ws).messages)}${ws.customLimits ? ' (custom limit)' : ''}`} />
         <Stat label="Total paid" value={rupees(Math.round(paid / 100))} sub={`${ws.payments.length} payment${ws.payments.length === 1 ? '' : 's'}`} />
         <Stat label="Message credits" value={fmtNum(ws.credits)} sub={`${fmtNum(leads)} leads collected`} />
       </StatGrid></div>
@@ -53,15 +54,15 @@ export default async function AdminWorkspace({ params }) {
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
         <div className="space-y-6">
           <section>
-            <h2 className="mb-3 font-display text-lg font-bold">Team</h2>
-            <ul className="card divide-y divide-line text-sm">
-              {ws.memberships.map((m) => (
-                <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
-                  <span><span className="font-semibold">{m.user.name}</span><span className="block text-xs text-slate">{m.user.email || 'Social sign-in'}{m.user.lastLoginAt ? `, last login ${fmtDate(m.user.lastLoginAt)}` : ''}</span></span>
-                  <StatusBadge s={m.role} />
-                </li>
-              ))}
-            </ul>
+            <h2 className="mb-3 font-display text-lg font-bold">{ws.memberships.length === 1 ? 'User' : `Team (${ws.memberships.length})`}</h2>
+            <AdminClientTeam
+              workspaceId={ws.id}
+              canEdit={adminCan(admin, 'clients.edit')}
+              members={ws.memberships.map((m) => ({
+                id: m.id, userId: m.userId, role: m.role, name: m.user.name, email: m.user.email, disabled: m.user.disabled, lastLoginAt: m.user.lastLoginAt?.toISOString() || null,
+                hasPassword: Boolean(m.user.passwordHash), signIn: [m.user.passwordHash && 'email + password', m.user.facebookId && 'Facebook'].filter(Boolean).join(', ') || 'Instagram',
+              }))}
+            />
           </section>
           <section>
             <h2 className="mb-3 font-display text-lg font-bold">Connected accounts</h2>
@@ -127,7 +128,8 @@ export default async function AdminWorkspace({ params }) {
           plans={PLAN_KEYS.map((k) => [k, PLANS[k].name])}
           ws={{
             id: ws.id, name: ws.name, plan: ws.plan, periodEnd: ws.periodEnd?.toISOString() || null, suspended: ws.suspended, suspendReason: ws.suspendReason, adminNote: ws.adminNote,
-            credits: ws.credits, trialPlan: ws.trialPlan, trialEndsAt: ws.trialEndsAt?.toISOString() || null, razorpaySubId: ws.razorpaySubId, subStatus: ws.subStatus,
+            credits: ws.credits, customLimits: ws.customLimits || null, planLimits: { messages: PLANS[plan].messages, accounts: PLANS[plan].accounts, members: PLANS[plan].members },
+            nextPlan: ws.nextPlan, nextStartAt: ws.nextStartAt?.toISOString() || null, trialPlan: ws.trialPlan, trialEndsAt: ws.trialEndsAt?.toISOString() || null, razorpaySubId: ws.razorpaySubId, subStatus: ws.subStatus,
             billingName: ws.billingName || '', billingEmail: ws.billingEmail || '', billingPhone: ws.billingPhone || '', billingGstin: ws.billingGstin || '', billingAddress: ws.billingAddress || '',
           }} />
       </div>

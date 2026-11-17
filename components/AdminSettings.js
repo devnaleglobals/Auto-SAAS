@@ -396,3 +396,16 @@ export function CreditsForm({ initial }) {
     </form>
   );
 }
+
+// ---------------- Plan change policy ----------------
+export function BillingPolicyForm({ initial }) {
+  const { v, set, busy, save } = useSettingForm('billingPolicy', initial);
+  return (
+    <form onSubmit={save} className="mt-6">
+      <Card title="When a client changes plan" description="Upgrades start immediately and are charged in full. Downgrades start when the paid period ends (nothing is refunded, the client keeps the current plan until then).">
+        <Toggle id="bp-ref" label="Refund unused days on upgrade" hint="Refunds the unused part of the client’s last payment to their original payment method through Razorpay, automatically. Off = no refund; the old plan simply stops." checked={v.upgradeRefund !== false} onChange={set('upgradeRefund')} />
+        <SaveBar busy={busy} label="Save" />
+      </Card>
+    </form>
+  );
+}

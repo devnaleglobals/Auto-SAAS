@@ -16,6 +16,7 @@ export default function AdminWorkspaceActions({ ws, can, plans: PLAN_OPTIONS }) 
   const [trialUntil, setTrialUntil] = useState((ws.trialEndsAt && new Date(ws.trialEndsAt) > new Date() ? ws.trialEndsAt : new Date(Date.now() + 14 * 86400000).toISOString()).slice(0, 10));
   const [delName, setDelName] = useState('');
   const [cr, setCr] = useState({ delta: '', note: '' });
+  const [lim, setLim] = useState({ messages: ws.customLimits?.messages ?? '', accounts: ws.customLimits?.accounts ?? '', members: ws.customLimits?.members ?? '' });
 
   async function act(action, body, ok) {
     setBusy(action);
@@ -79,6 +80,25 @@ export default function AdminWorkspaceActions({ ws, can, plans: PLAN_OPTIONS }) 
           <button className="btn-ghost" disabled={!!busy} onClick={async () => { if (await confirm({ title: 'Cancel at the end of the paid period?', body: 'The client keeps the plan until the period ends, then moves to Free.', confirmLabel: 'Cancel at period end' })) act('cancelSubscription', { when: 'cycle_end' }, 'Subscription will end at period end'); }}>Cancel at period end</button>
           <button className="btn-danger" disabled={!!busy} onClick={async () => { if (await confirm({ title: 'Cancel immediately?', body: 'The client moves to Free now. Refund any unused amount in Razorpay if needed.', confirmLabel: 'Cancel now', danger: true })) act('cancelSubscription', { when: 'now' }, 'Subscription cancelled'); }}>Cancel now</button>
         </div>
+      </section>}
+
+      {can.billing && <section className="card p-5">
+        <h2 className="font-display text-lg font-bold">Custom limits</h2>
+        <p className="mt-1 text-sm text-slate">For special deals: override this client’s plan limits. Leave a box empty to use the plan’s limit.</p>
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          {[['messages', 'Messages / month'], ['accounts', 'Accounts'], ['members', 'Team members']].map(([k, l]) => (
+            <div key={k}><label className="label text-xs" htmlFor={`lim-${k}`}>{l}</label><input id={`lim-${k}`} type="number" min={0} className="field" placeholder={String(ws.planLimits[k])} value={lim[k]} onChange={(e) => setLim({ ...lim, [k]: e.target.value })} /></div>
+          ))}
+        </div>
+        <div className="mt-3 flex gap-2">
+          <button className="btn-dark" disabled={!!busy} onClick={() => act('limits', lim, 'Limits saved')}>{busy === 'limits' && <Spinner />}Save limits</button>
+          {ws.customLimits && <button className="btn-ghost" disabled={!!busy} onClick={() => { setLim({ messages: '', accounts: '', members: '' }); act('limits', { messages: '', accounts: '', members: '' }, 'Back to plan limits'); }}>Use plan limits</button>}
+        </div>
+      </section>}
+
+      {can.billing && ws.nextPlan && <section className="card border-sky/30 p-5">
+        <h2 className="font-display text-lg font-bold">Scheduled plan change</h2>
+        <p className="mt-1 text-sm">Moves to <strong>{PLAN_OPTIONS.find(([k]) => k === ws.nextPlan)?.[1] || ws.nextPlan}</strong> on {ws.nextStartAt?.slice(0, 10)} (first charge that day). Manage it in Razorpay if the client wants to undo it.</p>
       </section>}
 
       {can.billing && <section className="card p-5">

@@ -4,6 +4,7 @@ import { verifyWebhook } from '@/lib/razorpay';
 import { planFromRazorpayId, loadPlans, PLANS, rupees } from '@/lib/plans';
 import { alertPayment } from '@/lib/notify';
 import { completeCreditOrder } from '@/lib/credits';
+import { activateSubscription } from '@/lib/planChange';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,15 +29,45 @@ export async function POST(req) {
   const sub = body.payload?.subscription?.entity;
   if (!sub?.id) return NextResponse.json({ ok: true });
 
-  const ws = await prisma.workspace.findFirst({ where: { OR: [{ razorpaySubId: sub.id }, { id: sub.notes?.workspaceId || '__none__' }] } });
+  const ws = await prisma.workspace.findFirst({ where: { OR: [{ razorpaySubId: sub.id }, { nextSubId: sub.id }, { id: sub.notes?.workspaceId || '__none__' }] } });
   if (!ws) return NextResponse.json({ ok: true });
-  // Ignore events for an older subscription after the customer switched plans
-  // (a newer subscription is already active). Events for a newer one are accepted.
-  if (ws.razorpaySubId && ws.razorpaySubId !== sub.id && ws.subStatus === 'active' && sub.notes?.previousSubscription !== ws.razorpaySubId) {
+
+  // Scheduled downgrade: the new subscription takes over only when its first charge succeeds.
+  if (ws.nextSubId === sub.id) {
+    if (['subscription.activated', 'subscription.charged'].includes(body.event)) {
+      const nextPlan = planFromRazorpayId(sub.plan_id) || ws.nextPlan;
+      await prisma.workspace.update({ where: { id: ws.id }, data: {
+        plan: nextPlan, subStatus: 'active', razorpaySubId: sub.id, periodEnd: sub.current_end ? new Date(sub.current_end * 1000) : ws.periodEnd,
+        nextPlan: null, nextSubId: null, nextStartAt: null,
+      } });
+      const p = body.payload?.payment?.entity;
+      if (p?.id) {
+        await prisma.payment.upsert({ where: { razorpayId: p.id }, create: { razorpayId: p.id, workspaceId: ws.id, invoiceId: p.invoice_id || null, subscriptionId: sub.id, plan: nextPlan, amount: p.amount || 0, currency: p.currency || 'INR', status: p.status || 'captured', method: p.method || null }, update: {} }).catch(() => {});
+        await alertPayment(ws.id, 'success', { plan: PLANS[nextPlan]?.name || nextPlan, amount: rupees(p.amount / 100) }).catch(() => {});
+      }
+      await prisma.auditLog.create({ data: { workspaceId: ws.id, action: 'billing.downgrade_started', detail: PLANS[nextPlan]?.name || nextPlan } }).catch(() => {});
+    } else if (['subscription.cancelled', 'subscription.halted'].includes(body.event)) {
+      await prisma.workspace.update({ where: { id: ws.id }, data: { nextPlan: null, nextSubId: null, nextStartAt: null } });
+      await alertPayment(ws.id, 'failed').catch(() => {});
+    }
+    return NextResponse.json({ ok: true }); // "authenticated" etc.: nothing changes until it starts
+  }
+  const plan = planFromRazorpayId(sub.plan_id) || sub.notes?.plan || ws.plan;
+
+  // An event for a subscription other than the current one.
+  if (ws.razorpaySubId && ws.razorpaySubId !== sub.id) {
+    // The new subscription of an upgrade became active: switch over (refund unused days, stop the old one) once.
+    if (['subscription.activated', 'subscription.charged'].includes(body.event) && sub.notes?.previousSubscription === ws.razorpaySubId) {
+      await activateSubscription(ws, sub, plan);
+      const p = body.payload?.payment?.entity;
+      if (p?.id) {
+        await prisma.payment.upsert({ where: { razorpayId: p.id }, create: { razorpayId: p.id, workspaceId: ws.id, invoiceId: p.invoice_id || null, subscriptionId: sub.id, plan, amount: p.amount || 0, currency: p.currency || 'INR', status: p.status || 'captured', method: p.method || null }, update: {} }).catch(() => {});
+        await alertPayment(ws.id, 'success', { plan: PLANS[plan]?.name || plan, amount: rupees(p.amount / 100) }).catch(() => {});
+      }
+    }
+    // Otherwise it's the old plan's subscription ending, or a new one not paid yet: nothing to change.
     return NextResponse.json({ ok: true });
   }
-
-  const plan = planFromRazorpayId(sub.plan_id) || sub.notes?.plan || ws.plan;
   const periodEnd = sub.current_end ? new Date(sub.current_end * 1000) : ws.periodEnd;
   const data = { razorpaySubId: sub.id, subStatus: sub.status, periodEnd };
 
@@ -59,7 +90,7 @@ export async function POST(req) {
       break;
     case 'subscription.cancelled':
     case 'subscription.completed':
-      await alertPayment(ws.id, 'cancelled').catch(() => {});
+      if (!ws.nextSubId) await alertPayment(ws.id, 'cancelled').catch(() => {}); // a scheduled downgrade isn't a cancellation
       break;
     default:
       break;

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { requireAdminApi, adminLog } from '@/lib/admin';
 import { PLANS, PLAN_KEYS, currentMonth } from '@/lib/plans';
@@ -6,8 +7,8 @@ import { rzp } from '@/lib/razorpay';
 import { deleteWorkspace } from '@/lib/account';
 import { adjustCredits } from '@/lib/credits';
 
-const EDIT = ['plan', 'suspend', 'resume', 'resetUsage', 'note', 'details', 'trial'];
-const BILLING = ['plan', 'trial', 'cancelSubscription', 'resetUsage', 'credits'];
+const EDIT = ['plan', 'suspend', 'resume', 'resetUsage', 'note', 'details', 'trial', 'addMember'];
+const BILLING = ['plan', 'trial', 'cancelSubscription', 'resetUsage', 'credits', 'limits'];
 
 // Admin actions on one client workspace.
 export async function PATCH(req, { params }) {
@@ -86,6 +87,27 @@ export async function PATCH(req, { params }) {
       if (!note) return NextResponse.json({ error: 'Write a reason (shown in the credit history).' }, { status: 400 });
       const change = await adjustCredits(id, delta, `${note} (by ${admin.email})`);
       await adminLog(admin, 'credits_adjusted', { workspaceId: id, detail: `${ws.name}: ${change > 0 ? '+' : ''}${change} (${note})` });
+      break;
+    }
+    case 'limits': {
+      // Custom limits for this client (empty = use the plan's limit).
+      const v = (k, max) => { const n = parseInt(b[k], 10); return b[k] === '' || b[k] === null || b[k] === undefined ? null : Number.isFinite(n) && n >= 0 && n <= max ? n : NaN; };
+      const lim = { messages: v('messages', 100_000_000), accounts: v('accounts', 10_000), members: v('members', 10_000) };
+      if (Object.values(lim).some((x) => Number.isNaN(x))) return NextResponse.json({ error: 'Limits must be whole numbers (leave empty to use the plan’s limit).' }, { status: 400 });
+      const any = Object.values(lim).some((x) => x !== null);
+      await prisma.workspace.update({ where: { id }, data: { customLimits: any ? lim : Prisma.DbNull } });
+      await adminLog(admin, 'limits_changed', { workspaceId: id, detail: `${ws.name}: ${any ? JSON.stringify(lim) : 'plan limits'}` });
+      break;
+    }
+    case 'addMember': {
+      const email = String(b.email || '').toLowerCase().trim();
+      const role = ['OWNER', 'ADMIN', 'MEMBER', 'VIEWER'].includes(b.role) ? b.role : 'MEMBER';
+      const user = email ? await prisma.user.findUnique({ where: { email } }) : null;
+      if (!user) return NextResponse.json({ error: 'No user has that email. Ask them to sign up first, or send a team invite from their workspace.' }, { status: 404 });
+      if (await prisma.membership.findUnique({ where: { userId_workspaceId: { userId: user.id, workspaceId: id } } })) return NextResponse.json({ error: 'Already a member.' }, { status: 409 });
+      if (role === 'OWNER') await prisma.membership.updateMany({ where: { workspaceId: id, role: 'OWNER' }, data: { role: 'ADMIN' } });
+      await prisma.membership.create({ data: { userId: user.id, workspaceId: id, role } });
+      await adminLog(admin, 'member_added', { workspaceId: id, detail: `${ws.name}: ${email} as ${role.toLowerCase()}` });
       break;
     }
     case 'cancelSubscription': {

@@ -8,7 +8,7 @@ const num = (n) => Number(n || 0).toLocaleString('en-IN');
 // Plan tiles on the Billing page. The highlight follows the tile the person clicks;
 // it starts on their current plan. "Most popular" stays as a label.
 export default function BillingPlanCards({ plans, current, canBuy, currentPrice }) {
-  const [selected, setSelected] = useState(current);
+  const [selected, setSelected] = useState(current || plans.find((p) => p.popular)?.key || plans[0]?.key);
   return (
     <div role="radiogroup" aria-label="Plans" className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       {plans.map((p) => {
@@ -33,7 +33,7 @@ export default function BillingPlanCards({ plans, current, canBuy, currentPrice 
             </ul>
             <div className="mt-auto pt-5" onClick={(e) => e.stopPropagation()}>
               {mine ? <p className="rounded-lg bg-canvas py-2.5 text-center text-sm font-semibold">Your plan</p>
-                : p.paid && canBuy ? <UpgradeButton plan={p.key} primary={on} label={currentPrice > p.price ? `Switch to ${p.name}` : `Upgrade to ${p.name}`} />
+                : p.paid && canBuy ? <UpgradeButton plan={p.key} primary={on} label={!currentPrice ? `Choose ${p.name}` : currentPrice > p.price ? `Downgrade to ${p.name}` : `Upgrade to ${p.name}`} />
                 : null}
             </div>
           </div>

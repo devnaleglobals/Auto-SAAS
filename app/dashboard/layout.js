@@ -4,14 +4,14 @@ import Sidebar from '@/components/Sidebar';
 import { FeedbackProvider } from '@/components/Feedback';
 import CommandPalette from '@/components/CommandPalette';
 import { getCompany } from '@/lib/company';
-import { PLANS, effectivePlan, usageThisMonth, onTrial } from '@/lib/plans';
+import { PLANS, effectivePlan, usageThisMonth, onTrial, limitsOf } from '@/lib/plans';
 import { getAnnouncement, getSignupSettings } from '@/lib/settings';
 
 export default async function DashLayout({ children }) {
   const ctx = await getContext();
   if (!ctx) redirect('/login');
   const planKey = effectivePlan(ctx.workspace);
-  const plan = { name: PLANS[planKey].name, used: usageThisMonth(ctx.workspace), cap: PLANS[planKey].messages, canUpgrade: planKey !== 'AGENCY' && ctx.can('manageWorkspace') };
+  const plan = { name: PLANS[planKey].name, used: usageThisMonth(ctx.workspace), cap: limitsOf(ctx.workspace).messages, canUpgrade: planKey !== 'AGENCY' && ctx.can('manageWorkspace') };
   const [announcement, platform, COMPANY] = await Promise.all([getAnnouncement(), getSignupSettings(), getCompany()]);
   const trialDays = onTrial(ctx.workspace) ? Math.max(0, Math.ceil((new Date(ctx.workspace.trialEndsAt) - Date.now()) / 86400000)) : null;
   return (

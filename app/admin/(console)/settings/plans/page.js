@@ -1,7 +1,8 @@
 import { requireAdminPage } from '@/lib/admin';
 import { PLANS, PLAN_KEYS, FEATURES_ALL, razorpayPlanId } from '@/lib/plans';
 import { paymentConfig } from '@/lib/razorpay';
-import { PlansForm, CreditsForm } from '@/components/AdminSettings';
+import { PlansForm, CreditsForm, BillingPolicyForm } from '@/components/AdminSettings';
+import { getBillingPolicy } from '@/lib/planChange';
 import { getCreditSettings } from '@/lib/credits';
 
 export const dynamic = 'force-dynamic';
@@ -13,6 +14,7 @@ export default async function PlanSettings() {
   return (
     <>
       <PlansForm initial={initial} keys={PLAN_KEYS} mode={(await paymentConfig()).mode} />
+      <BillingPolicyForm initial={await getBillingPolicy()} />
       <CreditsForm initial={await getCreditSettings()} />
     </>
   );

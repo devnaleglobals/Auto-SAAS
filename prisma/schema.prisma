@@ -36,6 +36,11 @@ model Workspace {
   usageMonth  String? // "2026-10"
   usageCount  Int          @default(0) // messages + replies sent this month
   credits     Int          @default(0) // pay-as-you-go message credits, used after the monthly plan messages run out
+  customLimits Json? // admin overrides for this client: { messages, accounts, members }
+  // Scheduled downgrade: the new plan starts when the current paid period ends
+  nextPlan    String?
+  nextSubId   String?      @unique
+  nextStartAt DateTime?
   // Billing details for GST invoices (sent to Razorpay as the customer)
   billingName   String?
   billingEmail  String?

@@ -84,6 +84,10 @@ const RULES = {
       return [out, null];
     },
   },
+  billingPolicy: {
+    perm: 'billing',
+    clean(b) { return [{ upgradeRefund: b.upgradeRefund !== false }, null]; },
+  },
   credits: {
     perm: 'billing',
     clean(b) {

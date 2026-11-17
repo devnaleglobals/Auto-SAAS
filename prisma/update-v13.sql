@@ -138,3 +138,10 @@ CREATE TABLE IF NOT EXISTS "CreditTxn" (
 CREATE UNIQUE INDEX IF NOT EXISTS "CreditTxn_orderId_key" ON "CreditTxn"("orderId");
 CREATE INDEX IF NOT EXISTS "CreditTxn_workspaceId_createdAt_idx" ON "CreditTxn"("workspaceId", "createdAt");
 DO $$ BEGIN ALTER TABLE "CreditTxn" ADD CONSTRAINT "CreditTxn_workspaceId_fkey" FOREIGN KEY ("workspaceId") REFERENCES "Workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- ---------- v13.2: custom limits per client, scheduled downgrades ----------
+ALTER TABLE "Workspace" ADD COLUMN IF NOT EXISTS "customLimits" JSONB;
+ALTER TABLE "Workspace" ADD COLUMN IF NOT EXISTS "nextPlan" TEXT;
+ALTER TABLE "Workspace" ADD COLUMN IF NOT EXISTS "nextSubId" TEXT;
+ALTER TABLE "Workspace" ADD COLUMN IF NOT EXISTS "nextStartAt" TIMESTAMP(3);
+CREATE UNIQUE INDEX IF NOT EXISTS "Workspace_nextSubId_key" ON "Workspace"("nextSubId");

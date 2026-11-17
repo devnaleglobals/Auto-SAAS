@@ -16,11 +16,26 @@ function loadCheckout() {
 }
 
 // Opens Razorpay Checkout as a popup over the Billing page. Falls back to Razorpay's hosted page.
+const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
+
 export function UpgradeButton({ plan, label, primary }) {
   const [busy, setBusy] = useState(false);
   const router = useRouter();
-  const { toast } = useFeedback();
+  const { toast, confirm } = useFeedback();
   async function go() {
+    // 1. Show exactly what happens before any payment.
+    setBusy(true);
+    const pv = await fetch(`/api/billing/preview?plan=${plan}`).then((r) => r.json()).catch(() => ({}));
+    setBusy(false);
+    if (pv.kind === 'same') return toast(`You’re already on ${pv.plan}.`);
+    if (pv.kind === 'pending') return toast('A plan change is already scheduled. Contact support to change it.', 'bad');
+    const body = pv.kind === 'downgrade'
+      ? `You keep ${pv.current} until ${pv.startsAtLabel}. ${pv.plan} starts on that date and ${inr(pv.chargeLater)} is charged then. You’ll confirm your payment method now; nothing is charged today.`
+      : pv.kind === 'upgrade'
+        ? `${pv.plan} starts now and ${inr(pv.chargeNow)} is charged today, then every month.${pv.refund > 0 ? ` The unused days of ${pv.current} (${inr(pv.refund)}) are refunded to your original payment method in 5–7 working days.` : ''} Your messages used this month count towards the new, higher limit.`
+        : `${pv.plan} starts now and ${inr(pv.chargeNow)} is charged today, then every month until you cancel.`;
+    const ok = await confirm({ title: pv.kind === 'downgrade' ? `Switch to ${pv.plan} on ${pv.startsAtLabel}?` : `Change to ${pv.plan}?`, body, confirmLabel: pv.kind === 'downgrade' ? 'Schedule the change' : `Pay ${inr(pv.chargeNow)}` });
+    if (!ok) return;
     setBusy(true);
     const res = await fetch('/api/billing/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan }) });
     const data = await res.json().catch(() => ({}));
@@ -35,7 +50,7 @@ export function UpgradeButton({ plan, label, primary }) {
       key: data.key,
       subscription_id: data.subscriptionId,
       name: 'ReplyRelay',
-      description: `${data.plan} plan, billed monthly`,
+      description: data.change?.kind === 'downgrade' ? `${data.plan} plan, starts ${new Date(data.change.startsAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}` : `${data.plan} plan, billed monthly`,
       prefill: data.prefill,
       theme: { color: '#141B2E' },
       modal: { ondismiss: () => setBusy(false) },
@@ -43,7 +58,10 @@ export function UpgradeButton({ plan, label, primary }) {
         const v = await fetch('/api/billing/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(resp) });
         const out = await v.json().catch(() => ({}));
         setBusy(false);
-        if (v.ok) { toast(`You’re on ${out.plan}. Thank you!`); router.refresh(); }
+        if (v.ok) {
+          toast(out.scheduled ? `Done. ${out.plan} starts on ${out.startsAt}.` : `You’re on ${out.plan}. Thank you!${out.refunded ? ` ₹${out.refunded} for unused days is being refunded.` : ''}`);
+          router.push('/dashboard/billing'); router.refresh();
+        }
         else toast(out.error || 'Payment received; your plan will update shortly.', 'bad');
       },
     });
