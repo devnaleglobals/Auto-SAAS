@@ -4,12 +4,16 @@ import { prisma } from '@/lib/db';
 import { createSession } from '@/lib/auth';
 import { createWorkspaceFor } from '@/lib/context';
 import { clientIp, limitOr429 } from '@/lib/ratelimit';
+import { getSignupSettings } from '@/lib/settings';
+import { sendTemplate } from '@/lib/mailer';
+import { appUrl } from '@/lib/platforms';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export async function POST(req) {
   const limited = await limitOr429([[`signup:ip:${clientIp(req)}`, 10, 3600]]);
   if (limited) return limited;
+  if (!(await getSignupSettings()).signupOpen) return NextResponse.json({ error: 'New sign-ups are paused right now. Please contact us.' }, { status: 403 });
   const { name, email, password, company, acceptTerms } = await req.json().catch(() => ({}));
   const n = String(name || '').trim().slice(0, 60);
   const e = String(email || '').toLowerCase().trim();
@@ -23,7 +27,8 @@ export async function POST(req) {
     return NextResponse.json({ error: 'An account with this email already exists. Log in instead.' }, { status: 409 });
   }
   const user = await prisma.user.create({ data: { name: n, email: e, passwordHash: await bcrypt.hash(p, 12), termsAcceptedAt: new Date() } });
-  await createWorkspaceFor(user, String(company || '').trim().slice(0, 60) || null);
+  const ws = await createWorkspaceFor(user, String(company || '').trim().slice(0, 60) || null);
+  await sendTemplate('welcome', e, { name: n.split(' ')[0], url: `${appUrl()}/dashboard`, trialDays: ws.trialEndsAt ? Math.round((ws.trialEndsAt - Date.now()) / 86400000) : '', trialPlan: ws.trialPlan || '' }).catch(() => {});
   await createSession(user);
   return NextResponse.json({ ok: true });
 }

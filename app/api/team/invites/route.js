@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db';
 import { requireApi, audit } from '@/lib/context';
 import { appUrl } from '@/lib/platforms';
 import { limitsOf } from '@/lib/plans';
-import { sendEmail } from '@/lib/notify';
+import { sendTemplate } from '@/lib/mailer';
 
 export async function POST(req) {
   const [ctx, err] = await requireApi('manageTeam');
@@ -24,10 +24,6 @@ export async function POST(req) {
   });
   await audit(ctx, 'team.invite_created', `${role.toLowerCase()}${invite.label ? ` for ${invite.label}` : ''}`);
   const url = `${appUrl()}/invite/${invite.token}`;
-  const emailed = to ? await sendEmail({
-    to: [to],
-    subject: `${ctx.user.name} invited you to ${ctx.workspace.name} on ReplyRelay`,
-    text: `${ctx.user.name} invited you to join the ${ctx.workspace.name} workspace on ReplyRelay as ${role.toLowerCase()}.\n\nAccept the invite (valid for 7 days):\n${url}`,
-  }) : false;
+  const emailed = to ? await sendTemplate('team_invite', to, { inviter: ctx.user.name, workspace: ctx.workspace.name, role: role.toLowerCase(), url }) : false;
   return NextResponse.json({ url, emailed });
 }

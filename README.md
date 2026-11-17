@@ -33,25 +33,19 @@ Facebook doesn't expose Page follows, so the check is Instagram-only.
   Reminders are sent by the scheduled checker, so keep the cron-job.org job running (every 5 minutes is enough).
 
 ## Platform admin
-`/admin` is for the people in `SUPER_ADMIN_EMAILS`: overview (MRR, revenue, signups, plan mix), clients (search,
-filters, per-client plan/usage/suspend/notes), users, payments (from Razorpay webhooks) and system checks.
+`/admin` is a separate admin console with its own login at **/admin/login** (admin accounts are not client
+accounts), roles (Owner, Admin, Support, Billing), 2-step verification and an audit log. Create the first Owner once at
+**/admin/setup** using `ADMIN_SETUP_TOKEN`. See **SETUP_V13.md** for everything the console can do.
 
 ## Billing
-Plans and limits live in `lib/plans.js` (Free, Starter ₹499, Pro ₹1,499, Agency ₹3,999). Limits: messages per month,
+Plans and limits are set in Admin → Settings → Plans & pricing (defaults in `lib/plans.js`) (Free, Starter ₹499, Pro ₹1,499, Agency ₹3,999). Limits: messages per month,
 connected accounts, team members. Razorpay subscriptions with hosted checkout; the webhook activates and renews plans.
 Cancelling keeps the plan until the paid period ends.
 
 ## Platform admin (you, the owner)
-Set `SUPER_ADMIN_EMAILS` in Vercel (comma-separated emails that log in with email/password). Those users see
-**Platform admin** in the sidebar and can open `/admin`:
-- **Overview:** clients, paying clients, MRR, revenue this month, messages sent, signups (30 days), broken connections
-- **Clients:** search and filter all workspaces; open one to see team, accounts, automations, usage, payments, activity
-- **Client actions:** give a plan for free until a date (no Razorpay needed), suspend/resume with a reason (automations stop
-  and the client sees a banner), reset this month's usage, private notes
-- **Users, Payments:** every user with last login; every Razorpay payment
-- **System:** configuration check, last webhook/reply activity, broken connections, admin log, and the
-  **announcement banner** shown to all clients
-Everything an admin does is recorded in the admin log.
+`/admin` is a separate admin console with its own login at **/admin/login** (admin accounts are not client
+accounts), roles (Owner, Admin, Support, Billing), 2-step verification and an audit log. Create the first Owner once at
+**/admin/setup** using `ADMIN_SETUP_TOKEN`. See **SETUP_V13.md** for everything the console can do.
 
 ## Payments (Razorpay)
 - Clients add **billing details** (business name, GSTIN, email, phone, address) on Billing; they are saved as the

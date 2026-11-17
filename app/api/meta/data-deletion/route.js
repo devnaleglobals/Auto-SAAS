@@ -4,7 +4,8 @@ import { prisma } from '@/lib/db';
 import { parseSignedRequest } from '@/lib/meta';
 import { deleteChannel, deleteUserAccount } from '@/lib/account';
 import { appUrl } from '@/lib/platforms';
-import { sendEmail } from '@/lib/notify';
+import { sendMail } from '@/lib/mailer';
+import { adminEmails } from '@/lib/admin';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -53,9 +54,9 @@ export async function POST(req) {
   });
 
   // Tell the platform team, so anything outside the database (emails, backups) can be checked by hand.
-  const admins = (process.env.SUPER_ADMIN_EMAILS || '').split(',').map((e) => e.trim()).filter(Boolean);
+  const admins = await adminEmails(['OWNER', 'ADMIN']);
   if (admins.length) {
-    await sendEmail({ to: admins, subject: `Meta data deletion request ${code}`, text: `Platform: ${sr.platform}\nMeta user ID: ${sr.userId}\nResult: ${found ? detail : 'nothing found'}\nStatus page: ${appUrl()}/data-deletion/status?code=${code}` }).catch(() => {});
+    await sendMail({ to: admins, kind: 'system', subject: `Meta data deletion request ${code}`, text: `Platform: ${sr.platform}\nMeta user ID: ${sr.userId}\nResult: ${found ? detail : 'nothing found'}\nStatus page: ${appUrl()}/data-deletion/status?code=${code}` }).catch(() => {});
   }
 
   return NextResponse.json({ url: `${appUrl()}/data-deletion/status?code=${code}`, confirmation_code: code });

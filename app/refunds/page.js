@@ -1,9 +1,13 @@
 import LegalPage from '@/components/LegalPage';
-import { COMPANY, operatedBy } from '@/lib/company';
+import { getCompany } from '@/lib/company';
 
+export const revalidate = 60; // picks up admin changes within a minute
 export const metadata = { title: 'Refund & Cancellation Policy — ReplyRelay' };
 
-export default function Refunds() {
+export default async function Refunds() {
+  const COMPANY = await getCompany();
+  const operatedBy = () => COMPANY.operatedBy;
+  const CONTACT = COMPANY.email;
   return (
     <LegalPage title="Refund & Cancellation Policy" updated="14 November 2026">
       <p>This policy applies to paid ReplyRelay plans sold by {operatedBy()}, {COMPANY.address}. Payments are processed by Razorpay.</p>

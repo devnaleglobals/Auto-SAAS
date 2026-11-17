@@ -10,7 +10,7 @@ export async function POST(req) {
   const [ctx, err] = await requireApi('manageWorkspace');
   if (err) return err;
   const { razorpay_payment_id: paymentId, razorpay_subscription_id: subId, razorpay_signature: signature } = await req.json().catch(() => ({}));
-  if (!verifyCheckoutSignature(paymentId, subId, signature)) return NextResponse.json({ error: 'We couldn’t verify this payment. If money was taken, it will be confirmed automatically within a few minutes.' }, { status: 400 });
+  if (!(await verifyCheckoutSignature(paymentId, subId, signature))) return NextResponse.json({ error: 'We couldn’t verify this payment. If money was taken, it will be confirmed automatically within a few minutes.' }, { status: 400 });
 
   const sub = await rzp(`/subscriptions/${subId}`);
   if (sub.notes?.workspaceId !== ctx.workspace.id) return NextResponse.json({ error: 'This payment belongs to a different workspace.' }, { status: 403 });

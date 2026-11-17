@@ -11,6 +11,7 @@ const NAV = [
   { href: '/dashboard/accounts', label: 'Accounts', icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0' },
   { href: '/dashboard/team', label: 'Team', icon: 'M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2 20a7 7 0 0 1 14 0M16 4.5a3.5 3.5 0 0 1 0 6.5M18 13.5a7 7 0 0 1 4 6.5' },
   { href: '/dashboard/activity', label: 'Activity', icon: 'M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z' },
+  { href: '/dashboard/support', label: 'Support', icon: 'M12 21a9 9 0 1 0-9-9c0 1.6.4 3 1.1 4.3L3 21l4.7-1.1A9 9 0 0 0 12 21zM9.5 9.5a2.5 2.5 0 1 1 3.3 2.4c-.5.2-.8.6-.8 1.1v.5M12 16.5h.01' },
   { href: '/dashboard/billing', label: 'Billing', icon: 'M3 7h18v10H3zM3 11h18M7 15h3' },
   { href: '/dashboard/settings', label: 'Settings', icon: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z' },
 ];
@@ -18,14 +19,14 @@ const NAV = [
 const GROUPS = [
   ['Run', ['/dashboard', '/dashboard/automations', '/dashboard/leads']],
   ['Set up', ['/dashboard/accounts', '/dashboard/team']],
-  ['Account', ['/dashboard/billing', '/dashboard/settings', '/dashboard/activity']],
+  ['Account', ['/dashboard/billing', '/dashboard/support', '/dashboard/settings', '/dashboard/activity']],
 ];
 
 function Icon({ d }) {
   return <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>;
 }
 
-export default function Sidebar({ user, workspace, workspaces, role, isAdmin, plan }) {
+export default function Sidebar({ user, workspace, workspaces, role, plan }) {
   const path = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -100,7 +101,6 @@ export default function Sidebar({ user, workspace, workspaces, role, isAdmin, pl
               </div>
               <Link role="menuitem" href="/dashboard/settings" onClick={() => { setMenu(false); setOpen(false); }} className="block px-4 py-2 hover:bg-canvas">Profile and settings</Link>
               <div className="flex items-center justify-between px-4 py-1.5"><span>Theme</span><span className="rounded-md bg-navy"><ThemeToggle /></span></div>
-              {isAdmin && <Link role="menuitem" href="/admin" className="block px-4 py-2 hover:bg-canvas">Platform admin</Link>}
               <form action="/api/auth/logout" method="post" className="border-t border-line"><button role="menuitem" className="block w-full px-4 py-2 text-left text-bad hover:bg-bad/5">Log out</button></form>
             </div>
           </>

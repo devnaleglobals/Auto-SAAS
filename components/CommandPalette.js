@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 // Ctrl/⌘ + K: jump to any page or start a common action.
-export default function CommandPalette({ isAdmin, canEdit }) {
+export default function CommandPalette({ canEdit }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
@@ -22,9 +22,10 @@ export default function CommandPalette({ isAdmin, canEdit }) {
     ['Team', '/dashboard/team', 'Go to'],
     ['Activity log', '/dashboard/activity', 'Go to'],
     ['Billing and plans', '/dashboard/billing', 'Go to'],
+    ['Support tickets', '/dashboard/support', 'Go to'],
+    ['New support ticket', '/dashboard/support?new=1', 'Do'],
     ['Settings', '/dashboard/settings', 'Go to'],
-    ...(isAdmin ? [['Platform admin', '/admin', 'Admin'], ['All clients', '/admin/workspaces', 'Admin'], ['Payments', '/admin/payments', 'Admin']] : []),
-  ], [isAdmin, canEdit]);
+  ], [canEdit]);
   const list = items.filter(([label]) => label.toLowerCase().includes(q.trim().toLowerCase()));
 
   useEffect(() => {

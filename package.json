@@ -1,6 +1,6 @@
 {
   "name": "replyrelay",
-  "version": "1.0.0",
+  "version": "13.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -15,14 +15,19 @@
     "@prisma/client": "5.22.0",
     "bcryptjs": "2.4.3",
     "jose": "5.9.6",
-    "next": "14.2.35",
-    "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "next": "16.4.6",
+    "nodemailer": "10.6.0",
+    "qrcode": "1.5.4",
+    "react": "19.2.9",
+    "react-dom": "19.2.9"
   },
   "devDependencies": {
     "autoprefixer": "10.4.20",
     "postcss": "8.4.49",
     "prisma": "5.22.0",
     "tailwindcss": "3.4.17"
+  },
+  "engines": {
+    "node": ">=20.9.0"
   }
 }

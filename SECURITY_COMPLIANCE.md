@@ -75,7 +75,7 @@ Everyone stays signed in after the update. Old password-reset links stop working
 - Retention periods can be changed with `RETENTION_ACTIVITY_DAYS` / `RETENTION_LEAD_DAYS`.
 
 ## Still recommended (not code)
-- Make sure every email in `SUPER_ADMIN_EMAILS` already has an account. Emails aren't verified at signup, so an unclaimed admin email could be registered by someone else.
+- Admin access now uses separate admin accounts (v13): turn on 2-step verification for every admin.
 - Change the reviewer account password you used in the Meta submission once review is fully done, and never share App Secrets in screenshots.
 - Turn on 2-factor login for Vercel, Neon, GitHub, Razorpay, Meta Business and Resend.
 - Rotate `CRON_SECRET` if it has appeared in a screenshot (cron-job.org URLs show it).

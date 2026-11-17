@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db';
 import { requireContext } from '@/lib/context';
 import { PageHeader, Notice, fmtNum } from '@/components/ui';
-import { PLANS, PAID, FEATURES_ALL, effectivePlan, usageThisMonth, rupees } from '@/lib/plans';
+import { PLANS, PAID, FEATURES_ALL, effectivePlan, usageThisMonth, rupees, onTrial } from '@/lib/plans';
 import { billingConfigured } from '@/lib/razorpay';
 import { UpgradeButton, CancelButton, BillingDetails } from '@/components/BillingActions';
 
@@ -25,6 +25,8 @@ export default async function Billing({ searchParams }) {
   const ctx = await requireContext();
   const sp = await searchParams;
   const ws = await prisma.workspace.findUnique({ where: { id: ctx.workspace.id } });
+  const payOn = await billingConfigured();
+  const trial = onTrial(ws);
   const current = effectivePlan(ws);
   const limits = PLANS[current];
   const [accounts, members, payments] = await Promise.all([
@@ -42,6 +44,7 @@ export default async function Billing({ searchParams }) {
       <PageHeader title="Billing" description="Your plan, this month’s usage, and upgrades. Payments are handled securely by Razorpay." />
       {sp?.status === 'success' && <Notice>Payment received. Your plan updates within a minute. Refresh if it hasn’t yet.</Notice>}
       {pastDue && <Notice tone="bad">Your last renewal didn’t go through. Razorpay will retry; your plan stays active until {day(ws.periodEnd)}.</Notice>}
+      {trial && <Notice tone="warn">You’re on a free {PLANS[current].name} trial until {day(ws.trialEndsAt)}. Choose a plan below to keep these limits after that.</Notice>}
       {cancelled && <Notice tone="warn">Your {PLANS[current].name} plan is cancelled and stays active until {day(ws.periodEnd)}. Then it moves to Free.</Notice>}
       {used >= limits.messages && <Notice tone="bad">You’ve used all {fmtNum(limits.messages)} messages this month, so automations are paused until next month or an upgrade.</Notice>}
 
@@ -50,7 +53,7 @@ export default async function Billing({ searchParams }) {
           <p className="text-sm text-slate">Current plan</p>
           <p className="mt-1 font-display text-3xl font-bold">{limits.name}</p>
           <p className="mt-1 text-sm text-slate">
-            {current === 'FREE' ? 'No payment needed'
+            {trial ? <>Free trial until {day(ws.trialEndsAt)}</> : current === 'FREE' ? 'No payment needed'
               : !ws.razorpaySubId ? <>Complimentary{ws.periodEnd ? <> until {day(ws.periodEnd)}</> : ''}</>
               : <>{rupees(limits.price)} a month{ws.periodEnd ? <><br />{cancelled ? 'Ends' : 'Renews'} on {day(ws.periodEnd)}</> : ''}</>}
           </p>
@@ -65,9 +68,9 @@ export default async function Billing({ searchParams }) {
       </section>
 
       <h2 className="mb-4 mt-10 font-display text-xl font-bold">Plans</h2>
-      {!billingConfigured() && canManage && <Notice tone="warn">Payments aren’t switched on yet. Add the Razorpay keys and plan IDs in Vercel to enable upgrades.</Notice>}
+      {!payOn && canManage && <Notice tone="warn">Online payments aren’t available right now. Contact support to change your plan.</Notice>}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {Object.entries(PLANS).map(([key, p]) => (
+        {Object.entries(PLANS).filter(([key, p]) => p.active !== false || key === current).map(([key, p]) => (
           <div key={key} className={`card flex flex-col p-5 ${p.popular ? 'border-ink ring-1 ring-ink' : ''}`}>
             <div className="flex items-center justify-between"><h3 className="font-display text-lg font-bold">{p.name}</h3>{p.popular && <span className="rounded-full bg-marigold/25 px-2 py-0.5 text-xs font-semibold">Most popular</span>}</div>
             <p className="mt-2"><span className="font-display text-3xl font-bold">{rupees(p.price)}</span>{p.price > 0 && <span className="text-sm text-slate"> / month</span>}</p>
@@ -79,7 +82,7 @@ export default async function Billing({ searchParams }) {
             </ul>
             <div className="mt-auto pt-5">
               {key === current ? <p className="rounded-lg bg-canvas py-2.5 text-center text-sm font-semibold">Your plan</p>
-                : PAID.includes(key) && canManage && billingConfigured() ? <UpgradeButton plan={key} primary={p.popular} label={PLANS[current].price > p.price ? `Switch to ${p.name}` : `Upgrade to ${p.name}`} />
+                : PAID.includes(key) && canManage && payOn ? <UpgradeButton plan={key} primary={p.popular} label={PLANS[current].price > p.price ? `Switch to ${p.name}` : `Upgrade to ${p.name}`} />
                 : null}
             </div>
           </div>

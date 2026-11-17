@@ -1,10 +1,13 @@
 import LegalPage from '@/components/LegalPage';
-import { COMPANY } from '@/lib/company';
+import { getCompany } from '@/lib/company';
 
+export const revalidate = 60; // picks up admin changes within a minute
 export const metadata = { title: 'Data Deletion — ReplyRelay' };
-const CONTACT = COMPANY.email;
 
-export default function DataDeletion() {
+export default async function DataDeletion() {
+  const COMPANY = await getCompany();
+  const operatedBy = () => COMPANY.operatedBy;
+  const CONTACT = COMPANY.email;
   return (
     <LegalPage title="Delete your data" updated="14 November 2026">
       <p>You can stop ReplyRelay’s access to your Instagram account or Facebook Pages and have your data deleted at any time.</p>

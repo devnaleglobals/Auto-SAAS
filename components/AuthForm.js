@@ -15,6 +15,8 @@ const loginErrors = {
   personal: 'This is a personal Instagram account. Switch it to Business or Creator in Instagram settings, then try again.',
   nopages: "No Facebook Pages were shared. Try again and select at least one Page.",
   taken: 'This account is already connected to another workspace.',
+  closed: 'New sign-ups are paused right now. Please contact us.',
+  disabled: 'This account has been disabled. Contact support.',
   error: 'Sign-in failed.',
 };
 

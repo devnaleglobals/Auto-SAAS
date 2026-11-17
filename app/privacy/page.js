@@ -1,13 +1,16 @@
 import LegalPage from '@/components/LegalPage';
-import { COMPANY, operatedBy } from '@/lib/company';
+import { getCompany } from '@/lib/company';
 import { RETENTION } from '@/lib/retentionPolicy';
 
+export const revalidate = 60; // picks up admin changes within a minute
 export const metadata = { title: 'Privacy Policy — ReplyRelay' };
-const CONTACT = COMPANY.email;
 
-export default function Privacy() {
+export default async function Privacy() {
+  const COMPANY = await getCompany();
+  const operatedBy = () => COMPANY.operatedBy;
+  const CONTACT = COMPANY.email;
   return (
-    <LegalPage title="Privacy Policy" updated="14 November 2026">
+    <LegalPage title="Privacy Policy" updated="17 November 2026">
       <p>ReplyRelay is operated by {operatedBy()}, {COMPANY.address} (“we”, “us”). ReplyRelay lets Instagram Business and Creator accounts and Facebook Pages reply to comments, send private messages, run automated conversations and moderate comments. This policy explains what personal data we handle, why, how long we keep it and the rights you have. It is written to meet India’s Digital Personal Data Protection Act, 2023 (DPDP Act), the Information Technology Act, 2000 and its rules, and Meta’s Platform Terms.</p>
 
       <h2>Who is responsible for what</h2>
@@ -25,6 +28,8 @@ export default function Privacy() {
         <li><strong>Leads:</strong> details people choose to type into your conversations, such as a name, phone number, email or answers to your questions.</li>
         <li><strong>Automations and team:</strong> the messages, keywords, links and settings you create, your team members and their roles, and a log of changes made in your workspace.</li>
         <li><strong>Billing:</strong> your plan, business name, billing email, phone, GSTIN and address, and the status of your payments. Card, UPI and bank details are entered on Razorpay’s checkout and never reach our servers.</li>
+        <li><strong>Support requests:</strong> the name, email, subject and messages you send through Support or our contact form, and our replies.</li>
+        <li><strong>Email records:</strong> the recipient, subject and delivery status of emails we send you, to fix delivery problems.</li>
         <li><strong>Technical:</strong> your IP address is used briefly to limit repeated sign-in attempts. Our hosting provider keeps standard server logs for a short time.</li>
       </ul>
 
@@ -51,7 +56,7 @@ export default function Privacy() {
         <li><strong>Meta Platforms</strong> (Instagram and Facebook), to read comments and send the messages you set up.</li>
         <li><strong>Vercel Inc.</strong> (application hosting) and <strong>Neon Inc.</strong> (database), which may store data on servers outside India.</li>
         <li><strong>Razorpay Software Pvt. Ltd.</strong> (payments and invoices, India).</li>
-        <li><strong>Resend</strong> (sending service emails).</li>
+        <li>Our <strong>email delivery provider</strong> (such as Resend, SendGrid, Zoho ZeptoMail or our mail server), to send account, alert and support emails.</li>
       </ul>
       <p>We may also disclose data when Indian law requires it, for example to comply with a lawful order. Transfers outside India are made only to countries not restricted by the Government of India under the DPDP Act.</p>
 
@@ -61,6 +66,7 @@ export default function Privacy() {
         <li>Comment and message logs and conversation history: {RETENTION.activityDays} days, then deleted automatically.</li>
         <li>Leads: until you delete them, or {RETENTION.leadDays} days after they were last updated.</li>
         <li>Workspace change log: {RETENTION.auditDays} days.</li>
+        <li>Support tickets: until {RETENTION.auditDays} days after they are closed. Email delivery records: 180 days.</li>
         <li>Message IDs kept only to avoid sending the same reply twice: {RETENTION.dedupeDays} days.</li>
         <li>Invoices and payment records: in our Razorpay account for as long as Indian tax law requires.</li>
         <li>Database backups roll over and no longer contain deleted data after about 30 days.</li>

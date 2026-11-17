@@ -44,22 +44,19 @@ Used for: reconnect alerts (max once a day per account), payment failed/cancelle
 - Run `npx prisma db push` after every update that changes `prisma/schema.prisma`.
 
 ## 6. Platform admin console
-1. Vercel → Environment Variables: `SUPER_ADMIN_EMAILS = you@yourmail.com` (comma-separate several). These people must
-   have signed up with that email (email login) → Redeploy.
-2. Open `/admin` (or the "Platform admin" link at the bottom of the sidebar). Everyone else gets a 404.
-3. What you can do: see MRR, revenue, clients, usage and broken connections; open a client to give a complimentary
-   plan until a date, reset this month's usage, suspend/resume (stops all sending; the client sees your reason),
-   and keep private notes. Every action is recorded in System → Admin log.
+1. Vercel → Environment Variables: `ADMIN_SETUP_TOKEN` = a random value (16+ characters) → Redeploy.
+2. Open `/admin/setup`, enter the token, and create the first Owner (its own email + strong password).
+3. Sign in at `/admin/login`, then turn on 2-step verification in Settings → My security.
+4. Add more admins in Settings → Admin team. Everything is listed in SETUP_V13.md.
 
 ## 7. Before launch checklist
 - [ ] Meta App Review approved (see APP_REVIEW.md)
 - [ ] Custom domain live, all Meta URLs updated
 - [ ] Razorpay live keys + live plans + webhook
-- [ ] Resend domain verified, test password reset works
+- [ ] Email provider set in Admin → Settings → Email delivery, sending domain verified, test email works
 - [ ] Uptime monitor and cron job running
 - [ ] NEXT_PUBLIC_SUPPORT_EMAIL set to a real support inbox
 
 
 ## Platform admin
-Add `SUPER_ADMIN_EMAILS=you@example.com` in Vercel → Redeploy. Log in with that email (email/password login).
-Use /admin instead of running SQL in Neon to give plans, suspend clients or reset usage.
+Separate console at /admin/login. First Owner: /admin/setup with ADMIN_SETUP_TOKEN. See SETUP_V13.md.

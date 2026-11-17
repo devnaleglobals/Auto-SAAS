@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { verifyWebhook } from '@/lib/razorpay';
-import { planFromRazorpayId } from '@/lib/plans';
+import { planFromRazorpayId, loadPlans, PLANS, rupees } from '@/lib/plans';
 import { alertPayment } from '@/lib/notify';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +9,8 @@ export const dynamic = 'force-dynamic';
 // Razorpay → Settings → Webhooks: this URL, your webhook secret, and the subscription.* events.
 export async function POST(req) {
   const raw = await req.text();
-  if (!verifyWebhook(raw, req.headers.get('x-razorpay-signature'))) return new Response('Invalid signature', { status: 401 });
+  if (!(await verifyWebhook(raw, req.headers.get('x-razorpay-signature')))) return new Response('Invalid signature', { status: 401 });
+  await loadPlans();
   let body;
   try { body = JSON.parse(raw); } catch { return new Response('Bad JSON', { status: 400 }); }
   const sub = body.payload?.subscription?.entity;
@@ -34,6 +35,9 @@ export async function POST(req) {
       break;
     case 'subscription.activated':
     case 'subscription.charged':
+      Object.assign(data, { plan, subStatus: 'active' });
+      if (body.payload?.payment?.entity?.amount) await alertPayment(ws.id, 'success', { plan: PLANS[plan]?.name || plan, amount: rupees(body.payload.payment.entity.amount / 100) }).catch(() => {});
+      break;
     case 'subscription.resumed':
       Object.assign(data, { plan, subStatus: 'active' });
       break;

@@ -12,7 +12,7 @@ export default function AnnouncementForm({ initial }) {
 
   async function save(active) {
     setBusy(true);
-    const res = await fetch('/api/admin/announcement', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...v, active }) });
+    const res = await fetch('/api/admin/settings/announcement', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...v, active }) });
     const data = await res.json().catch(() => ({}));
     setBusy(false);
     toast(res.ok ? (active ? 'Announcement published' : 'Announcement removed') : data.error || 'Couldn’t save.', res.ok ? 'ok' : 'bad');

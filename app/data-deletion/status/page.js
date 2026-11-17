@@ -1,6 +1,6 @@
 import LegalPage from '@/components/LegalPage';
 import { prisma } from '@/lib/db';
-import { COMPANY } from '@/lib/company';
+import { getCompany } from '@/lib/company';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Data deletion status — ReplyRelay', robots: { index: false } };
@@ -8,6 +8,9 @@ export const metadata = { title: 'Data deletion status — ReplyRelay', robots: 
 const LABEL = { RECEIVED: 'Received, in progress', COMPLETED: 'Completed', NOT_FOUND: 'Completed: we held no data for this account' };
 
 export default async function DeletionStatus({ searchParams }) {
+  const COMPANY = await getCompany();
+  const operatedBy = () => COMPANY.operatedBy;
+  const CONTACT = COMPANY.email;
   const code = String((await searchParams)?.code || '').toUpperCase().replace(/[^A-F0-9]/g, '').slice(0, 32);
   const r = code ? await prisma.deletionRequest.findUnique({ where: { code } }) : null;
   return (

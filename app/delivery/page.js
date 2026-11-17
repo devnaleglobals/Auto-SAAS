@@ -1,9 +1,13 @@
 import LegalPage from '@/components/LegalPage';
-import { COMPANY, operatedBy } from '@/lib/company';
+import { getCompany } from '@/lib/company';
 
+export const revalidate = 60; // picks up admin changes within a minute
 export const metadata = { title: 'Service Delivery Policy — ReplyRelay' };
 
-export default function Delivery() {
+export default async function Delivery() {
+  const COMPANY = await getCompany();
+  const operatedBy = () => COMPANY.operatedBy;
+  const CONTACT = COMPANY.email;
   return (
     <LegalPage title="Service Delivery Policy" updated="14 November 2026">
       <p>ReplyRelay is online software (SaaS) provided by {operatedBy()}. Nothing is shipped physically.</p>

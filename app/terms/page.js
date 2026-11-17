@@ -1,10 +1,13 @@
 import LegalPage from '@/components/LegalPage';
-import { COMPANY, operatedBy } from '@/lib/company';
+import { getCompany } from '@/lib/company';
 
+export const revalidate = 60; // picks up admin changes within a minute
 export const metadata = { title: 'Terms of Service — ReplyRelay' };
-const CONTACT = COMPANY.email;
 
-export default function Terms() {
+export default async function Terms() {
+  const COMPANY = await getCompany();
+  const operatedBy = () => COMPANY.operatedBy;
+  const CONTACT = COMPANY.email;
   return (
     <LegalPage title="Terms of Service" updated="14 November 2026">
       <p>These terms apply to ReplyRelay, a service operated by {operatedBy()}, {COMPANY.address} (“we”). By creating an account or connecting an Instagram or Facebook account, you agree to them. You must be at least 18 and, if you use ReplyRelay for a business, authorised to accept these terms for it.</p>

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/db';
-import { sendEmail } from '@/lib/notify';
+import { sendTemplate } from '@/lib/mailer';
 import { appUrl } from '@/lib/platforms';
 import { clientIp, limitOr429 } from '@/lib/ratelimit';
 
@@ -19,11 +19,7 @@ export async function POST(req) {
     await prisma.passwordReset.deleteMany({ where: { userId: user.id, usedAt: null } }); // only the newest link works
     const token = crypto.randomBytes(32).toString('base64url');
     await prisma.passwordReset.create({ data: { token: hashToken(token), userId: user.id, expiresAt: new Date(Date.now() + 3600000) } });
-    await sendEmail({
-      to: [user.email],
-      subject: 'Reset your ReplyRelay password',
-      text: `Hi ${user.name.split(' ')[0]},\n\nUse this link to set a new password. It works for one hour:\n${appUrl()}/reset-password/${token}\n\nIf you didn’t ask for this, you can ignore this email. Your password won’t change.`,
-    });
+    await sendTemplate('password_reset', user.email, { name: user.name.split(' ')[0], url: `${appUrl()}/reset-password/${token}` });
   }
   return NextResponse.json({ ok: true });
 }

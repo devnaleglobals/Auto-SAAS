@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireApi, audit } from '@/lib/context';
-import { rzp, billingConfigured, ensureCustomer } from '@/lib/razorpay';
+import { rzp, billingConfigured, ensureCustomer, paymentConfig } from '@/lib/razorpay';
 import { PAID, PLANS, razorpayPlanId, effectivePlan } from '@/lib/plans';
 
 // Creates a Razorpay subscription for the workspace. The browser opens Razorpay Checkout with it;
@@ -9,9 +9,9 @@ import { PAID, PLANS, razorpayPlanId, effectivePlan } from '@/lib/plans';
 export async function POST(req) {
   const [ctx, err] = await requireApi('manageWorkspace');
   if (err) return err;
-  if (!billingConfigured()) return NextResponse.json({ error: 'Payments aren’t switched on yet.' }, { status: 503 });
+  if (!(await billingConfigured())) return NextResponse.json({ error: 'Payments aren’t switched on yet.' }, { status: 503 });
   const { plan } = await req.json().catch(() => ({}));
-  if (!PAID.includes(plan) || !razorpayPlanId(plan)) return NextResponse.json({ error: 'Choose a plan.' }, { status: 400 });
+  if (!PAID.includes(plan) || !razorpayPlanId(plan) || PLANS[plan]?.active === false) return NextResponse.json({ error: 'Choose a plan.' }, { status: 400 });
 
   const ws = await prisma.workspace.findUnique({ where: { id: ctx.workspace.id } });
   if (effectivePlan(ws) === plan && ws.subStatus === 'active' && ws.razorpaySubId) return NextResponse.json({ error: `You’re already on ${PLANS[plan].name}.` }, { status: 400 });
@@ -19,18 +19,20 @@ export async function POST(req) {
 
   // Check the plan exists for these keys first, so a wrong ID gives a clear message.
   const planId = razorpayPlanId(plan).trim();
-  const keyMode = String(process.env.RAZORPAY_KEY_ID || '').startsWith('rzp_live_') ? 'Live' : 'Test';
+  const pay = await paymentConfig();
+  const keyMode = pay.mode;
   try { await rzp(`/plans/${planId}`); }
   catch (e) {
     console.error('Razorpay plan check failed', plan, planId, e.message);
-    return NextResponse.json({ error: `Razorpay can’t find the ${PLANS[plan].name} plan (${planId}) with your ${keyMode} mode keys. In Vercel, RAZORPAY_PLAN_${plan} must be a plan_… ID created in ${keyMode} mode.` }, { status: 502 });
+    console.error(`Razorpay can't find the ${plan} plan (${planId}) with ${keyMode} mode keys. Set a ${keyMode}-mode plan ID in Admin → Settings → Plans.`);
+    return NextResponse.json({ error: 'This plan can’t be bought right now. Please contact support.' }, { status: 502 });
   }
 
   let customerId;
   try { customerId = await ensureCustomer(ws, { name: ctx.user.name, email: ctx.user.email }); }
   catch (e) {
     console.error('Razorpay customer failed', e.message);
-    return NextResponse.json({ error: `Razorpay couldn’t save your billing details: ${e.message}${/authentication/i.test(e.message) ? '. Check RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in Vercel.' : ''}` }, { status: 502 });
+    return NextResponse.json({ error: /authentication/i.test(e.message) ? 'Payments are temporarily unavailable. Please contact support.' : `Razorpay couldn’t save your billing details: ${e.message}` }, { status: 502 });
   }
 
   let sub;
@@ -41,9 +43,7 @@ export async function POST(req) {
     });
   } catch (e) {
     console.error('Razorpay subscription failed', plan, razorpayPlanId(plan), e.message);
-    const hint = /does not exist|not found|invalid/i.test(e.message)
-      ? ` Check that RAZORPAY_PLAN_${plan} in Vercel is the plan ID from the same Razorpay mode (Test or Live) as your API keys.`
-      : '';
+    const hint = '';
     return NextResponse.json({ error: `Razorpay couldn’t start the subscription: ${e.message}.${hint}` }, { status: 502 });
   }
   await prisma.workspace.update({ where: { id: ws.id }, data: { razorpayCustomerId: customerId } });
@@ -51,7 +51,7 @@ export async function POST(req) {
   return NextResponse.json({
     subscriptionId: sub.id,
     url: sub.short_url,
-    key: process.env.RAZORPAY_KEY_ID,
+    key: pay.keyId,
     plan: PLANS[plan].name,
     prefill: { name: ws.billingName || ctx.user.name, email: ws.billingEmail || ctx.user.email || '', contact: ws.billingPhone || '' },
   });

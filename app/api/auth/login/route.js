@@ -19,6 +19,7 @@ export async function POST(req) {
   }
   const ok = await bcrypt.compare(String(password || '').slice(0, 200), user?.passwordHash || DUMMY_HASH);
   if (!user || !ok) return NextResponse.json({ error: 'Email or password is incorrect.' }, { status: 401 });
+  if (user.disabled) return NextResponse.json({ error: 'This account has been disabled. Contact support.' }, { status: 403 });
 
   await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }).catch(() => {});
   await createSession(user);
