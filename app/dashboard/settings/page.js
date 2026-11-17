@@ -3,6 +3,7 @@ import { requireContext } from '@/lib/context';
 import { PageHeader } from '@/components/ui';
 import WorkspaceSettings from '@/components/WorkspaceSettings';
 import { ThemePicker } from '@/components/Theme';
+import SupportAccess from '@/components/SupportAccess';
 import { Section, ProfileForm, PasswordForm, NotificationsForm, DeleteWorkspace, PrivacyData } from '@/components/SettingsForms';
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +13,7 @@ export default async function Settings() {
   const user = await prisma.user.findUnique({ where: { id: ctx.user.id } });
   const isOwner = ctx.can('manageWorkspace');
   const ownsWorkspaces = ctx.memberships.some((m) => m.role === 'OWNER');
-  const nav = [['profile', 'Profile'], ['password', 'Password'], ['notifications', 'Notifications'], ['appearance', 'Appearance'], ['workspace', 'Workspace'], ['privacy', 'Privacy & data'], ...(isOwner ? [['danger', 'Delete workspace']] : [])];
+  const nav = [['profile', 'Profile'], ['password', 'Password'], ['notifications', 'Notifications'], ['appearance', 'Appearance'], ['workspace', 'Workspace'], ['support', 'Support access'], ['privacy', 'Privacy & data'], ...(isOwner ? [['danger', 'Delete workspace']] : [])];
 
   return (
     <>
@@ -39,6 +40,9 @@ export default async function Settings() {
             <ThemePicker />
           </Section>
           <div id="workspace" className="scroll-mt-8"><WorkspaceSettings name={ctx.workspace.name} canEdit={isOwner} /></div>
+          <Section id="support" title="Support access" description="Decide what our support team may do in your workspace.">
+            <SupportAccess until={ctx.workspace.supportAccessUntil ? new Date(ctx.workspace.supportAccessUntil).toISOString() : null} canEdit={isOwner} />
+          </Section>
           <Section id="privacy" title="Privacy & data" description={<>Your rights over your data are explained in our <a href="/privacy" className="underline">Privacy Policy</a>.</>}>
             <PrivacyData hasPassword={Boolean(user.email && user.passwordHash)} ownsWorkspaces={ownsWorkspaces} />
           </Section>

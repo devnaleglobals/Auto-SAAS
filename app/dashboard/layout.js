@@ -11,7 +11,7 @@ export default async function DashLayout({ children }) {
   const ctx = await getContext();
   if (!ctx) redirect('/login');
   const planKey = effectivePlan(ctx.workspace);
-  const plan = { name: PLANS[planKey].name, used: usageThisMonth(ctx.workspace), cap: limitsOf(ctx.workspace).messages, canUpgrade: planKey !== 'AGENCY' && ctx.can('manageWorkspace') };
+  const plan = { name: PLANS[planKey].name, used: usageThisMonth(ctx.workspace), cap: limitsOf(ctx.workspace).messages, canUpgrade: planKey !== 'AGENCY' && ctx.can('manageWorkspace'), payg: planKey === 'PAYG', credits: ctx.workspace.credits || 0 };
   const [announcement, platform, COMPANY] = await Promise.all([getAnnouncement(), getSignupSettings(), getCompany()]);
   const trialDays = onTrial(ctx.workspace) ? Math.max(0, Math.ceil((new Date(ctx.workspace.trialEndsAt) - Date.now()) / 86400000)) : null;
   return (

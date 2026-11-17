@@ -60,6 +60,14 @@ export default async function Privacy() {
       </ul>
       <p>We may also disclose data when Indian law requires it, for example to comply with a lawful order. Transfers outside India are made only to countries not restricted by the Government of India under the DPDP Act.</p>
 
+      <h2>Access by our support team</h2>
+      <p>A small number of ReplyRelay staff can open your workspace in our admin console, only to give support, keep the service secure, and meet Meta’s rules. Staff accounts use their own login and 2-step verification. Every action they take is logged.</p>
+      <ul>
+        <li>Support staff can see your <strong>automation settings and whether messages were delivered</strong>. They can't see your Meta access tokens, and the support view doesn't show who commented or what they wrote.</li>
+        <li>They can <strong>pause or resume</strong> an automation that is failing, breaks Meta’s policies or puts your account at risk. You are emailed each time, with the reason, and it shows on your Activity page.</li>
+        <li>They <strong>edit or delete</strong> an automation only if your workspace owner turns on <em>Settings → Support access</em>. That switches off automatically after 1, 7 or 30 days, and you can turn it off at any time.</li>
+      </ul>
+
       <h2>How long we keep it</h2>
       <ul>
         <li>Account, connected accounts and automations: while your account is active. Deleting them in the app removes them immediately.</li>

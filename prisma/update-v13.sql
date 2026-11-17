@@ -145,3 +145,6 @@ ALTER TABLE "Workspace" ADD COLUMN IF NOT EXISTS "nextPlan" TEXT;
 ALTER TABLE "Workspace" ADD COLUMN IF NOT EXISTS "nextSubId" TEXT;
 ALTER TABLE "Workspace" ADD COLUMN IF NOT EXISTS "nextStartAt" TIMESTAMP(3);
 CREATE UNIQUE INDEX IF NOT EXISTS "Workspace_nextSubId_key" ON "Workspace"("nextSubId");
+
+-- v13.3: client-granted support access for editing automations
+ALTER TABLE "Workspace" ADD COLUMN IF NOT EXISTS "supportAccessUntil" TIMESTAMP(3);

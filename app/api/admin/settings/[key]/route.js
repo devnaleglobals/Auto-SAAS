@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdminApi, adminLog } from '@/lib/admin';
 import { getSetting, saveSetting, mergeSecrets, redact } from '@/lib/settings';
-import { PLAN_KEYS, DEFAULT_PLANS } from '@/lib/plans';
+import { PLAN_KEYS, PAID, DEFAULT_PLANS } from '@/lib/plans';
 import { PROVIDERS, SECRET_FIELDS, TEMPLATES } from '@/lib/mailer';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -29,7 +29,7 @@ const RULES = {
     clean(b) {
       const days = int(b.trialDays, 0, 90);
       if (b.trialEnabled && !days) return [null, 'Set the trial length (1–90 days).'];
-      if (b.trialEnabled && !PLAN_KEYS.slice(1).includes(b.trialPlan)) return [null, 'Choose the plan given during the trial.'];
+      if (b.trialEnabled && !PAID.includes(b.trialPlan)) return [null, 'Choose the plan given during the trial.'];
       return [{ signupOpen: Boolean(b.signupOpen), trialEnabled: Boolean(b.trialEnabled), trialDays: days ?? 0, trialPlan: b.trialPlan || 'PRO', maintenance: Boolean(b.maintenance), maintenanceMessage: str(b.maintenanceMessage, 300) }, null];
     },
   },
@@ -40,13 +40,14 @@ const RULES = {
       for (const k of PLAN_KEYS) {
         const p = b[k] || {};
         const name = str(p.name, 30) || DEFAULT_PLANS[k].name;
-        const price = k === 'FREE' ? 0 : int(p.price, 1, 10_000_000);
-        if (k !== 'FREE' && !price) return [null, `${name}: set a monthly price in rupees.`];
+        const noFee = k === 'FREE' || k === 'PAYG';
+        const price = noFee ? 0 : int(p.price, 1, 10_000_000);
+        if (!noFee && !price) return [null, `${name}: set a monthly price in rupees.`];
         const messages = int(p.messages, 0, 100_000_000); const accounts = int(p.accounts, 1, 1000); const members = int(p.members, 1, 1000);
         if (messages === null || !accounts || !members) return [null, `${name}: messages, accounts and team members must be numbers.`];
         const razorpayPlanId = str(p.razorpayPlanId, 60);
         if (razorpayPlanId && !/^plan_[A-Za-z0-9]+$/.test(razorpayPlanId)) return [null, `${name}: the Razorpay plan ID starts with plan_`];
-        out[k] = { name, price, messages, accounts, members, blurb: str(p.blurb, 160), popular: Boolean(p.popular), active: k === 'FREE' ? true : p.active !== false, ...(k === 'FREE' ? {} : { razorpayPlanId }) };
+        out[k] = { name, price, messages, accounts, members, blurb: str(p.blurb, 160), popular: Boolean(p.popular), active: k === 'FREE' ? true : p.active !== false, ...(noFee ? {} : { razorpayPlanId }) };
       }
       const features = (Array.isArray(b.features) ? b.features : []).map((f) => str(f, 80)).filter(Boolean).slice(0, 20);
       return [{ ...out, features }, null];
@@ -99,7 +100,8 @@ const RULES = {
         packs.push({ id: str(p.id, 20) || `p${Date.now().toString(36)}${i}`, name: str(p.name, 40) || `${credits.toLocaleString('en-IN')} messages`, credits, price });
       }
       if (b.enabled && !packs.length) return [null, 'Add at least one credit pack.'];
-      return [{ enabled: Boolean(b.enabled), packs }, null];
+      const lowBalance = int(b.lowBalance, 0, 10_000_000) ?? 100;
+      return [{ enabled: Boolean(b.enabled), packs, lowBalance }, null];
     },
   },
   payments: {

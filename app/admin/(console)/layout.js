@@ -8,7 +8,7 @@ export const metadata = { title: 'Admin console — ReplyRelay', robots: { index
 export default async function AdminLayout({ children }) {
   const admin = await requireAdminPage();
   const openTickets = adminCan(admin, 'tickets') ? await prisma.ticket.count({ where: { status: 'OPEN' } }) : 0;
-  const perms = ['clients.view', 'billing', 'tickets', 'settings', 'emails', 'admins'].filter((p) => adminCan(admin, p));
+  const perms = ['clients.view', 'automations', 'billing', 'tickets', 'settings', 'emails', 'admins'].filter((p) => adminCan(admin, p));
   return (
     <FeedbackProvider>
       <AdminNav admin={{ name: admin.name, email: admin.email, role: ROLE_LABEL[admin.role], totp: admin.totpEnabled }} perms={perms} openTickets={openTickets} />

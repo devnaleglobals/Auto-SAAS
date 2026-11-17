@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { requireAdminApi, adminLog } from '@/lib/admin';
-import { PLANS, PLAN_KEYS, currentMonth } from '@/lib/plans';
+import { PLANS, PLAN_KEYS, PAID, currentMonth } from '@/lib/plans';
 import { rzp } from '@/lib/razorpay';
 import { deleteWorkspace } from '@/lib/account';
 import { adjustCredits } from '@/lib/credits';
@@ -24,13 +24,14 @@ export async function PATCH(req, { params }) {
     case 'plan': {
       if (!PLANS[b.plan]) return NextResponse.json({ error: 'Choose a plan.' }, { status: 400 });
       const until = b.until ? new Date(b.until) : null;
-      if (b.plan !== 'FREE' && (!until || isNaN(until) || until <= new Date())) return NextResponse.json({ error: 'Choose a future end date for the complimentary plan.' }, { status: 400 });
+      if (!['FREE', 'PAYG'].includes(b.plan) && (!until || isNaN(until) || until <= new Date())) return NextResponse.json({ error: 'Choose a future end date for the complimentary plan.' }, { status: 400 });
       if (ws.razorpaySubId && ['active', 'authenticated'].includes(ws.subStatus) && b.plan !== ws.plan) {
         return NextResponse.json({ error: 'This client pays through Razorpay. Ask them to change plans on their Billing page, or cancel their subscription in Razorpay first.' }, { status: 409 });
       }
       await prisma.workspace.update({
         where: { id }, data: b.plan === 'FREE'
           ? { plan: 'FREE', subStatus: null, periodEnd: null }
+          : b.plan === 'PAYG' ? { plan: 'PAYG', subStatus: 'active', periodEnd: null, razorpaySubId: null, nextPlan: null, nextStartAt: null }
           : { plan: b.plan, subStatus: 'active', periodEnd: until, razorpaySubId: ws.razorpaySubId && ws.subStatus === 'active' ? ws.razorpaySubId : null },
       });
       await adminLog(admin, 'plan_changed', { workspaceId: id, detail: `${ws.name}: ${PLANS[b.plan].name}${until ? ` until ${until.toISOString().slice(0, 10)}` : ''}` });
@@ -75,7 +76,7 @@ export async function PATCH(req, { params }) {
         break;
       }
       const until = new Date(b.until);
-      if (!PLAN_KEYS.slice(1).includes(b.plan) || isNaN(until) || until <= new Date()) return NextResponse.json({ error: 'Choose the trial plan and a future end date.' }, { status: 400 });
+      if (!PAID.includes(b.plan) || isNaN(until) || until <= new Date()) return NextResponse.json({ error: 'Choose the trial plan and a future end date.' }, { status: 400 });
       await prisma.workspace.update({ where: { id }, data: { trialPlan: b.plan, trialEndsAt: until } });
       await adminLog(admin, 'trial_set', { workspaceId: id, detail: `${ws.name}: ${PLANS[b.plan].name} until ${until.toISOString().slice(0, 10)}` });
       break;

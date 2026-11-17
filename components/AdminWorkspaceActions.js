@@ -56,7 +56,7 @@ export default function AdminWorkspaceActions({ ws, can, plans: PLAN_OPTIONS }) 
         <h2 className="font-display text-lg font-bold">Free trial</h2>
         <p className="mt-1 text-sm text-slate">{ws.trialEndsAt && new Date(ws.trialEndsAt) > new Date() ? `On a trial until ${ws.trialEndsAt.slice(0, 10)}.` : 'Not on a trial.'} Set or extend a trial; it doesn’t affect a paid plan.</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
-          <select className="field" value={trialPlan} onChange={(e) => setTrialPlan(e.target.value)} aria-label="Trial plan">{PLAN_OPTIONS.filter(([v]) => v !== 'FREE').map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+          <select className="field" value={trialPlan} onChange={(e) => setTrialPlan(e.target.value)} aria-label="Trial plan">{PLAN_OPTIONS.filter(([v]) => !['FREE', 'PAYG'].includes(v)).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
           <input type="date" className="field" value={trialUntil} onChange={(e) => setTrialUntil(e.target.value)} aria-label="Trial ends" />
           <button className="btn-dark" disabled={!!busy} onClick={() => act('trial', { plan: trialPlan, until: `${trialUntil}T23:59:59` }, 'Trial updated')}>{busy === 'trial' && <Spinner />}Save trial</button>
         </div>

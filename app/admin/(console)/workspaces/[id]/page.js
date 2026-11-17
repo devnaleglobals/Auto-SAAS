@@ -10,6 +10,8 @@ import StatusBadge from '@/components/StatusBadge';
 import AdminWorkspaceActions from '@/components/AdminWorkspaceActions';
 import AdminClientTeam from '@/components/AdminClientTeam';
 import { requireAdminPage } from '@/lib/admin';
+import AdminClientAutomations from '@/components/AdminClientAutomations';
+import { hasSupportAccess } from '@/lib/supportAccess';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +30,9 @@ export default async function AdminWorkspace({ params }) {
     },
   });
   if (!ws) notFound();
+  const pausedSaved = adminCan(admin, 'automations') ? await prisma.setting.findUnique({ where: { key: `pausedBySupport:${id}` } }).catch(() => null) : null;
+  const pausedBySupport = Array.isArray(pausedSaved?.value) ? ws.automations.filter((a) => pausedSaved.value.includes(a.id) && a.status === 'PAUSED').length : 0;
+  const runningCount = ws.automations.filter((a) => a.status === 'ACTIVE').length;
   const [leads, logs] = await Promise.all([
     prisma.lead.count({ where: { workspaceId: id } }),
     prisma.auditLog.findMany({ where: { workspaceId: id }, orderBy: { createdAt: 'desc' }, take: 10, include: { user: { select: { name: true } } } }),
@@ -45,7 +50,7 @@ export default async function AdminWorkspace({ params }) {
       <p className="mt-1 text-sm text-slate">Joined {fmtDate(ws.createdAt)}. Workspace ID {ws.id}</p>
 
       <div className="mt-6"><StatGrid>
-        <Stat label="Plan" value={PLANS[plan].name} sub={onTrial(ws) ? `Free trial until ${fmtDate(ws.trialEndsAt)}` : ws.periodEnd ? `${ws.razorpaySubId ? `Razorpay (${ws.subStatus})` : 'Complimentary'} until ${fmtDate(ws.periodEnd)}` : 'No paid period'} />
+        <Stat label="Plan" value={PLANS[plan].name} sub={onTrial(ws) ? `Free trial until ${fmtDate(ws.trialEndsAt)}` : plan === 'PAYG' ? 'Pay per message with credits' : ws.nextPlan === 'PAYG' ? `Moving to pay as you go on ${fmtDate(ws.nextStartAt)}` : ws.periodEnd ? `${ws.razorpaySubId ? `Razorpay (${ws.subStatus})` : 'Complimentary'} until ${fmtDate(ws.periodEnd)}` : 'No paid period'} />
         <Stat label="Messages this month" value={fmtNum(usageThisMonth(ws))} sub={`of ${fmtNum(limitsOf(ws).messages)}${ws.customLimits ? ' (custom limit)' : ''}`} />
         <Stat label="Total paid" value={rupees(Math.round(paid / 100))} sub={`${ws.payments.length} payment${ws.payments.length === 1 ? '' : 's'}`} />
         <Stat label="Message credits" value={fmtNum(ws.credits)} sub={`${fmtNum(leads)} leads collected`} />
@@ -78,14 +83,18 @@ export default async function AdminWorkspace({ params }) {
             )}
           </section>
           <section>
-            <h2 className="mb-3 font-display text-lg font-bold">Automations</h2>
+            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="font-display text-lg font-bold">Automations</h2>
+              <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${hasSupportAccess(ws) ? 'bg-ok/10 text-ok' : 'bg-slate/10 text-slate'}`}>{hasSupportAccess(ws) ? `Support access on until ${fmtDate(ws.supportAccessUntil)}` : 'Support access off (view and pause only)'}</span>
+            </div>
+            {adminCan(admin, 'automations') && <AdminClientAutomations workspaceId={ws.id} running={runningCount} pausedBySupport={pausedBySupport} />}
             {ws.automations.length === 0 ? <p className="card border-dashed p-5 text-sm text-slate">No automations yet.</p> : (
               <div className="card overflow-x-auto">
                 <table className="w-full min-w-[560px] text-sm">
                   <thead className="border-b border-line"><tr><th className="th">Name</th><th className="th">Type</th><th className="th">Replies</th><th className="th">Status</th></tr></thead>
                   <tbody>{ws.automations.map((a) => (
                     <tr key={a.id} className="border-b border-line last:border-0">
-                      <td className="td"><span className="flex items-center gap-1.5"><PlatformIcon platform={a.channel.platform} className="h-3.5 w-3.5" />{a.name}</span></td>
+                      <td className="td"><span className="flex items-center gap-1.5"><PlatformIcon platform={a.channel.platform} className="h-3.5 w-3.5" />{adminCan(admin, 'automations') ? <Link href={`/admin/automations/${a.id}`} className="font-semibold hover:underline">{a.name}</Link> : a.name}</span></td>
                       <td className="td">{typeInfo(a.type, a.channel.platform)?.title}</td>
                       <td className="td tabular-nums">{fmtNum(a.replyCount)}</td>
                       <td className="td"><StatusBadge s={a.status} /></td>

@@ -41,6 +41,7 @@ model Workspace {
   nextPlan    String?
   nextSubId   String?      @unique
   nextStartAt DateTime?
+  supportAccessUntil DateTime? // client allows platform support to edit automations until this time
   // Billing details for GST invoices (sent to Razorpay as the customer)
   billingName   String?
   billingEmail  String?

@@ -9,7 +9,7 @@ export default async function Terms() {
   const operatedBy = () => COMPANY.operatedBy;
   const CONTACT = COMPANY.email;
   return (
-    <LegalPage title="Terms of Service" updated="14 November 2026">
+    <LegalPage title="Terms of Service" updated="17 November 2026">
       <p>These terms apply to ReplyRelay, a service operated by {operatedBy()}, {COMPANY.address} (“we”). By creating an account or connecting an Instagram or Facebook account, you agree to them. You must be at least 18 and, if you use ReplyRelay for a business, authorised to accept these terms for it.</p>
 
       <h2>What ReplyRelay does</h2>
@@ -41,6 +41,9 @@ export default async function Terms() {
 
       <h2>Availability</h2>
       <p>We work to keep ReplyRelay running reliably but don’t guarantee it will be uninterrupted or error-free. Messages may occasionally be delayed or not sent, for example when Meta is unavailable.</p>
+
+      <h2>Support and safety actions</h2>
+      <p>To protect you, the people who message your accounts and the Meta platform, we may pause an automation or all of a workspace’s automations if it is failing repeatedly, sends unsolicited or misleading messages, or breaks these terms or Meta’s policies. We will email the workspace owner with the reason, and you can resume it once the problem is fixed. We change or delete your automations only with the support access you grant in Settings.</p>
 
       <h2>Suspension and termination</h2>
       <p>We may suspend or close workspaces that break these terms or Meta’s policies, or that put the service or other customers at risk. You can delete your account and data anytime from Settings → Privacy &amp; data, or as described on our <a className="underline" href="/data-deletion">data deletion page</a>.</p>

@@ -90,7 +90,7 @@ export function SignupForm({ initial, plans }) {
         <Toggle id="tr-on" label="Give new clients a free trial" checked={v.trialEnabled} onChange={set('trialEnabled')} />
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
           <Field id="tr-days" label="Trial length (days)"><input id="tr-days" type="number" min={1} max={90} className="field" value={v.trialDays} onChange={set('trialDays')} disabled={!v.trialEnabled} /></Field>
-          <Field id="tr-plan" label="Plan during the trial"><select id="tr-plan" className="field" value={v.trialPlan} onChange={set('trialPlan')} disabled={!v.trialEnabled}>{plans.filter((p) => p.key !== 'FREE').map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}</select></Field>
+          <Field id="tr-plan" label="Plan during the trial"><select id="tr-plan" className="field" value={v.trialPlan} onChange={set('trialPlan')} disabled={!v.trialEnabled}>{plans.filter((p) => !['FREE', 'PAYG'].includes(p.key)).map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}</select></Field>
         </div>
         <p className="hint mt-3">Changes apply to new sign-ups. To change one client’s trial, open the client in Clients.</p>
       </Card>
@@ -113,15 +113,17 @@ export function PlansForm({ initial, keys, mode }) {
         {keys.map((k) => {
           const p = v[k] || {};
           const free = k === 'FREE';
+          const payg = k === 'PAYG';
+          const noFee = free || payg;
           return (
-            <Card key={k} title={`${p.name || k}${free ? ' (free plan)' : ''}`}>
+            <Card key={k} title={`${p.name || k}${free ? ' (free plan)' : payg ? ' (pay as you go)' : ''}`} description={payg ? 'No monthly fee. Clients prepay with message credits (packs below). “Messages per month” here are free messages included each month before credits are used; set 0 for pure pay-per-message.' : undefined}>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field id={`${k}-name`} label="Name"><input id={`${k}-name`} className="field" value={p.name || ''} onChange={setP(k, 'name')} /></Field>
-                <Field id={`${k}-price`} label="Price (₹ / month)"><input id={`${k}-price`} type="number" min={0} className="field" value={free ? 0 : p.price ?? ''} onChange={setP(k, 'price')} disabled={free} /></Field>
-                <Field id={`${k}-msg`} label="Messages per month"><input id={`${k}-msg`} type="number" min={0} className="field" value={p.messages ?? ''} onChange={setP(k, 'messages')} /></Field>
+                <Field id={`${k}-price`} label="Price (₹ / month)"><input id={`${k}-price`} type="number" min={0} className="field" value={noFee ? 0 : p.price ?? ''} onChange={setP(k, 'price')} disabled={noFee} /></Field>
+                <Field id={`${k}-msg`} label={payg ? 'Free messages per month' : 'Messages per month'}><input id={`${k}-msg`} type="number" min={0} className="field" value={p.messages ?? ''} onChange={setP(k, 'messages')} /></Field>
                 <Field id={`${k}-acc`} label="Connected accounts"><input id={`${k}-acc`} type="number" min={1} className="field" value={p.accounts ?? ''} onChange={setP(k, 'accounts')} /></Field>
                 <Field id={`${k}-mem`} label="Team members"><input id={`${k}-mem`} type="number" min={1} className="field" value={p.members ?? ''} onChange={setP(k, 'members')} /></Field>
-                {!free && <Field id={`${k}-rz`} label={`Razorpay plan ID (${mode} mode)`} hint="Create the plan in Razorpay → Subscriptions → Plans with the same price."><input id={`${k}-rz`} className="field font-mono" placeholder="plan_…" value={p.razorpayPlanId || ''} onChange={setP(k, 'razorpayPlanId')} /></Field>}
+                {!noFee && <Field id={`${k}-rz`} label={`Razorpay plan ID (${mode} mode)`} hint="Create the plan in Razorpay → Subscriptions → Plans with the same price."><input id={`${k}-rz`} className="field font-mono" placeholder="plan_…" value={p.razorpayPlanId || ''} onChange={setP(k, 'razorpayPlanId')} /></Field>}
                 <div className="sm:col-span-2"><Field id={`${k}-blurb`} label="Short description"><input id={`${k}-blurb`} className="field" value={p.blurb || ''} onChange={setP(k, 'blurb')} /></Field></div>
               </div>
               <div className="mt-2 flex flex-wrap gap-x-6">
@@ -377,7 +379,7 @@ export function CreditsForm({ initial }) {
   const upd = (i, k) => (e) => setV((o) => ({ ...o, packs: o.packs.map((p, j) => (j === i ? { ...p, [k]: e.target.value } : p)) }));
   return (
     <form onSubmit={save} className="mt-6">
-      <Card title="Pay as you go: message credits" description="Clients buy credits once (Razorpay one-time payment). Credits are used only after the plan’s monthly messages run out, and never expire. Combine with the Free plan for a pure pay-as-you-go option.">
+      <Card title="Pay as you go: message credits" description="Clients buy credits once (Razorpay one-time payment). 1 credit = 1 message. Credits are used after the plan’s monthly messages run out and never expire. On the Pay as you go plan, credits are how clients pay. Turning this off also hides the Pay as you go plan.">
         <Toggle id="cr-on" label="Sell credit packs on the Billing page" checked={v.enabled} onChange={set('enabled')} />
         <div className="mt-3 space-y-3">
           {packs.map((p, i) => (
@@ -390,6 +392,7 @@ export function CreditsForm({ initial }) {
           ))}
         </div>
         {packs.length < 6 && <button type="button" className="btn-ghost btn-sm mt-3" onClick={() => setV((o) => ({ ...o, packs: [...(o.packs || []), { name: '', credits: '', price: '' }] }))}>+ Add pack</button>}
+        <div className="mt-4 max-w-xs"><Field id="cr-low" label="Low-balance email below (credits)" hint="The client is emailed once when their balance drops below this. 0 turns it off."><input id="cr-low" type="number" min={0} className="field" value={v.lowBalance ?? 100} onChange={set('lowBalance')} /></Field></div>
         <p className="hint mt-3">Prices include GST if your plans do. Razorpay sends a payment receipt; issue the GST invoice for credit packs from your accounting software.</p>
         <SaveBar busy={busy} label="Save credit packs" />
       </Card>

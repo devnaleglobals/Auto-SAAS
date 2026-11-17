@@ -11,7 +11,8 @@ export default async function Pricing() {
   const FAQ = [
     ['How does the free trial work?', trial ? `New accounts get the ${trial.plan} plan free for ${trial.days} days, no card needed. After that you stay on Free unless you choose a plan.` : 'You can start on the Free plan without a card and upgrade anytime.'],
     ['What counts as a message?', 'Every private message, conversation message, reminder and public comment reply ReplyRelay sends. Hiding a spam comment doesn’t count.'],
-    ['What happens if I reach my limit?', 'Automations pause until the 1st of next month, or until you upgrade. Nothing is lost.'],
+    ['What happens if I reach my limit?', credits.length ? 'Automations pause until the 1st of next month, until you upgrade, or until you buy message credits. Nothing is lost.' : 'Automations pause until the 1st of next month, or until you upgrade. Nothing is lost.'],
+    ...(plans.some((p) => p.payg) ? [['How does pay as you go work?', 'There’s no monthly fee. Buy a credit pack once; each message your automations send uses 1 credit. When credits run out, sending pauses until you top up, and we email you before that happens. You can move to a monthly plan any time.']] : []),
     ['Can I cancel anytime?', 'Yes. Cancel from the Billing page and keep your plan until the end of the month you paid for.'],
     ['How do I pay?', 'Through Razorpay with UPI autopay, debit or credit cards. You get a GST invoice each month.'],
     ['Is it safe for my account?', 'Yes. ReplyRelay uses Meta’s official, approved API and only replies to people who commented, replied or messaged you.'],
@@ -21,7 +22,7 @@ export default async function Pricing() {
       <PublicHeader />
       <section className="mx-auto max-w-6xl px-6 pb-16 pt-6">
         <h1 className="max-w-2xl font-display text-4xl font-extrabold tracking-[-0.02em] md:text-5xl">Simple plans, in rupees.</h1>
-        <p className="mt-4 max-w-xl text-base text-slate">Every plan has every feature. Choose how many messages, accounts and team members you need.</p>
+        <p className="mt-4 max-w-xl text-base text-slate">Every plan has every feature. Pay monthly for a set number of messages, or pay only for what you send.</p>
         {trial && <p className="mt-4 inline-flex rounded-full bg-marigold/20 px-4 py-1.5 text-sm font-semibold">{trial.days}-day free trial of {trial.plan} · no card needed</p>}
         <p className="mt-3 text-xs text-slate">All prices in Indian rupees (INR), billed monthly. Applicable GST is shown on your invoice. <Link href="/refunds" className="underline">Refund &amp; cancellation policy</Link>.</p>
 
@@ -29,8 +30,8 @@ export default async function Pricing() {
 
         {credits.length > 0 && (
           <section className="mt-12">
-            <h2 className="font-display text-2xl font-bold">Pay as you go</h2>
-            <p className="mt-2 max-w-2xl text-sm text-slate">Need more messages some months? Buy message credits once, on any plan (even Free). They’re used after your monthly messages run out and never expire.</p>
+            <h2 className="font-display text-2xl font-bold">Message credits</h2>
+            <p className="mt-2 max-w-2xl text-sm text-slate">1 credit = 1 message. On the Pay as you go plan, credits are all you pay for. On any other plan, they top you up after your monthly messages run out. Credits never expire.</p>
             <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {credits.map((p) => (
                 <div key={p.id} className="card p-5">

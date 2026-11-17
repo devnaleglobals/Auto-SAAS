@@ -9,7 +9,7 @@ const rupees = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
 export default function PricingCards({ plans, trial }) {
   const [selected, setSelected] = useState(plans.find((p) => p.popular)?.key || plans[0]?.key);
   return (
-    <div role="radiogroup" aria-label="Choose a plan" className={`mt-10 grid gap-4 md:grid-cols-2 ${plans.length >= 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+    <div role="radiogroup" aria-label="Choose a plan" className={`mt-10 grid gap-4 md:grid-cols-2 ${plans.length >= 5 ? 'lg:grid-cols-3 xl:grid-cols-5' : plans.length >= 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
       {plans.map((p) => {
         const on = selected === p.key;
         return (
@@ -26,10 +26,13 @@ export default function PricingCards({ plans, trial }) {
               <h2 className="font-display text-xl font-bold">{p.name}</h2>
               {p.popular && <span className="rounded-full bg-marigold/25 px-2 py-0.5 text-xs font-semibold">Most popular</span>}
             </div>
-            <p className="mt-3"><span className="font-display text-4xl font-bold">{rupees(p.price)}</span><span className="text-sm text-slate">{p.price ? ' / month' : ' forever'}</span></p>
+            <p className="mt-3"><span className="font-display text-4xl font-bold">{rupees(p.price)}</span><span className="text-sm text-slate">{p.price || p.payg ? ' / month' : ' forever'}</span></p>
+            {p.payg && p.rate && <p className="text-sm font-semibold">+ from ₹{p.rate} per 100 messages</p>}
             <p className="mt-2 text-sm text-slate">{p.blurb}</p>
             <ul className="mt-5 space-y-2 text-sm">
-              <li><strong>{Number(p.messages).toLocaleString('en-IN')}</strong> messages a month</li>
+              {p.payg
+                ? <li>{p.messages > 0 ? <><strong>{Number(p.messages).toLocaleString('en-IN')}</strong> free messages a month, then </> : 'Pay '}{p.messages > 0 ? 'pay' : ''} only for messages you send</li>
+                : <li><strong>{Number(p.messages).toLocaleString('en-IN')}</strong> messages a month</li>}
               <li><strong>{p.accounts}</strong> Instagram or Facebook account{p.accounts > 1 ? 's' : ''}</li>
               <li><strong>{p.members}</strong> team member{p.members > 1 ? 's' : ''}</li>
             </ul>
@@ -39,7 +42,7 @@ export default function PricingCards({ plans, trial }) {
               className={`${on ? 'btn-primary' : 'btn-ghost'} mt-auto w-full`}
               style={{ marginTop: '1.5rem' }}
             >
-              {p.price ? (trial ? 'Start free trial' : `Start with ${p.name}`) : 'Start free'}
+              {p.payg ? 'Start pay as you go' : p.price ? (trial ? 'Start free trial' : `Start with ${p.name}`) : 'Start free'}
             </Link>
           </div>
         );

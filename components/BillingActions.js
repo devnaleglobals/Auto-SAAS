@@ -153,3 +153,29 @@ export function BuyCreditsButton({ packId, label, primary }) {
   }
   return <button onClick={go} disabled={busy} className={`${primary ? 'btn-primary' : 'btn-dark'} w-full`}>{busy && <Spinner />}{label}</button>;
 }
+
+// Switch to the Pay as you go plan (no payment now), or from it back to Free.
+// `paidUntil` is set when the client is on a paid subscription: the switch then happens when that period ends.
+export function PaygButton({ to = 'PAYG', label, primary, paidUntil, credits = 0, rate }) {
+  const [busy, setBusy] = useState(false);
+  const router = useRouter();
+  const { toast, confirm } = useFeedback();
+  async function go() {
+    const body = to === 'FREE'
+      ? 'You move to the Free plan now. Your unused credits stay in your account and are used after Free’s monthly messages.'
+      : paidUntil
+        ? `You keep your current plan until ${paidUntil}, with no further monthly charges. From then on you pay only for messages you send${rate ? ` (from ₹${rate} per 100)` : ''}, using message credits.`
+        : `No monthly fee. Each message your automations send uses 1 credit${rate ? ` (from ₹${rate} per 100 messages)` : ''}. ${credits > 0 ? `You have ${credits.toLocaleString('en-IN')} credits.` : 'Buy credits after switching; automations stop sending when credits run out.'}`;
+    const ok = await confirm({ title: to === 'FREE' ? 'Move to Free?' : paidUntil ? `Switch to pay as you go on ${paidUntil}?` : 'Switch to pay as you go?', body, confirmLabel: to === 'FREE' ? 'Move to Free' : paidUntil ? 'Schedule the switch' : 'Switch now' });
+    if (!ok) return;
+    setBusy(true);
+    const res = await fetch('/api/billing/payg', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to }) });
+    const data = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) return toast(data.error || 'That didn’t work.', 'bad');
+    toast(data.scheduled ? `Done. Pay as you go starts on ${data.startsAt}.` : `You’re now on ${data.plan}.`);
+    router.push(to === 'PAYG' && !data.scheduled && credits <= 0 ? '/dashboard/billing/plans#credits' : '/dashboard/billing');
+    router.refresh();
+  }
+  return <button type="button" onClick={go} disabled={busy} className={`${primary ? 'btn-primary' : 'btn-ghost'} w-full`}>{busy && <Spinner />}{label}</button>;
+}

@@ -31,7 +31,8 @@ export default async function Billing({ searchParams }) {
   const paidRunning = Boolean(ws.razorpaySubId) && current !== 'FREE' && !trial;
   const cancelled = ws.subStatus === 'cancelled' && current !== 'FREE' && !ws.nextPlan;
   const pastDue = ['pending', 'halted'].includes(ws.subStatus) && current !== 'FREE';
-  const status = trial ? 'Free trial' : current === 'FREE' ? 'Free' : ws.nextPlan ? 'Change scheduled' : cancelled ? 'Cancelled' : pastDue ? 'Payment due' : ws.razorpaySubId ? 'Active' : 'Complimentary';
+  const payg = current === 'PAYG';
+  const status = trial ? 'Free trial' : current === 'FREE' ? 'Free' : payg ? 'Active' : ws.nextPlan ? 'Change scheduled' : cancelled ? 'Cancelled' : pastDue ? 'Payment due' : ws.razorpaySubId ? 'Active' : 'Complimentary';
   const statusTone = pastDue ? 'bg-bad/10 text-bad' : cancelled ? 'bg-marigold/25' : 'bg-ok/10 text-ok';
 
   return (
@@ -39,8 +40,9 @@ export default async function Billing({ searchParams }) {
       <PageHeader title="Billing" description="Your current plan, usage and payments. Payments are handled securely by Razorpay." />
       {sp?.status === 'success' && <Notice>Payment received. Your plan updates within a minute. Refresh if it hasn’t yet.</Notice>}
       {pastDue && <Notice tone="bad">Your last renewal didn’t go through. Razorpay will retry; your plan stays active until {day(ws.periodEnd)}.</Notice>}
-      {used >= limits.messages && !(ws.credits > 0) && <Notice tone="bad">You’ve used all {fmtNum(limits.messages)} messages this month, so automations are paused until next month. Change plan{creditCfg.enabled ? ' or buy message credits' : ''} to keep replying.</Notice>}
-      {used >= limits.messages && ws.credits > 0 && <Notice tone="warn">Your monthly messages are used up; automations keep running on your {fmtNum(ws.credits)} credits.</Notice>}
+      {payg && !(ws.credits > 0) && used >= limits.messages && <Notice tone="bad">You’re out of message credits, so automations can’t send. <Link href="/dashboard/billing/plans#credits" className="font-semibold underline">Buy credits</Link> to keep replying.</Notice>}
+      {!payg && used >= limits.messages && !(ws.credits > 0) && <Notice tone="bad">You’ve used all {fmtNum(limits.messages)} messages this month, so automations are paused until next month. Change plan{creditCfg.enabled ? ' or buy message credits' : ''} to keep replying.</Notice>}
+      {!payg && used >= limits.messages && ws.credits > 0 && <Notice tone="warn">Your monthly messages are used up; automations keep running on your {fmtNum(ws.credits)} credits.</Notice>}
 
       <section className="card overflow-hidden">
         <div className="grid gap-6 p-6 lg:grid-cols-[1fr_1.2fr]">
@@ -50,30 +52,35 @@ export default async function Billing({ searchParams }) {
               <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusTone}`}>{status}</span>
             </div>
             <p className="mt-1 font-display text-4xl font-bold">{plan.name}</p>
-            <p className="mt-1 text-slate">{current === 'FREE' ? 'No payment needed' : trial ? `Free until ${day(ws.trialEndsAt)}` : ws.razorpaySubId ? `${rupees(plan.price)} a month` : 'Complimentary'}</p>
+            <p className="mt-1 text-slate">{payg ? 'No monthly fee. You pay per message with credits.' : current === 'FREE' ? 'No payment needed' : trial ? `Free until ${day(ws.trialEndsAt)}` : ws.razorpaySubId ? `${rupees(plan.price)} a month` : 'Complimentary'}</p>
             <dl className="mt-5 grid grid-cols-[130px_1fr] gap-y-2 text-sm">
               {trial && <><dt className="text-slate">Trial ends</dt><dd className="font-semibold">{day(ws.trialEndsAt)}</dd></>}
               {paidRunning && !cancelled && !ws.nextPlan && <><dt className="text-slate">Next payment</dt><dd className="font-semibold">{rupees(plan.price)} on {day(ws.periodEnd)}</dd></>}
               {(cancelled || ws.nextPlan) && ws.periodEnd && <><dt className="text-slate">Paid until</dt><dd className="font-semibold">{day(ws.periodEnd)}</dd></>}
-              {!ws.razorpaySubId && current !== 'FREE' && !trial && ws.periodEnd && <><dt className="text-slate">Active until</dt><dd className="font-semibold">{day(ws.periodEnd)}</dd></>}
+              {payg && <><dt className="text-slate">Credits left</dt><dd className={`font-semibold ${(ws.credits || 0) <= 0 ? 'text-bad' : ''}`}>{fmtNum(ws.credits)}{(ws.credits || 0) <= 0 ? ': automations can’t send' : ''}</dd></>}
+              {!ws.razorpaySubId && current !== 'FREE' && !payg && !trial && ws.periodEnd && <><dt className="text-slate">Active until</dt><dd className="font-semibold">{day(ws.periodEnd)}</dd></>}
               {limits.custom && <><dt className="text-slate">Limits</dt><dd>Custom limits set by our team</dd></>}
             </dl>
-            {ws.nextPlan && <p className="mt-4 rounded-lg bg-sky/5 p-3 text-sm">Changing to <strong>{PLANS[ws.nextPlan]?.name}</strong> on {day(ws.nextStartAt)}. You keep {plan.name} until then.</p>}
+            {ws.nextPlan && <p className="mt-4 rounded-lg bg-sky/5 p-3 text-sm">Changing to <strong>{PLANS[ws.nextPlan]?.name}</strong> on {day(ws.nextStartAt)}. You keep {plan.name} until then{ws.nextPlan === 'PAYG' ? ', with no further monthly charges. Buy credits before then so messages keep sending' : ''}.</p>}
             {cancelled && <p className="mt-4 rounded-lg bg-marigold/10 p-3 text-sm">Cancelled. You keep {plan.name} until {day(ws.periodEnd)}, then move to Free.</p>}
             {canManage && (
               <div className="mt-6 flex flex-wrap gap-2">
-                <Link href="/dashboard/billing/plans" className="btn-primary">{current === 'FREE' || trial ? 'Choose a plan' : 'Manage plan'}</Link>
+                {payg && creditCfg.enabled && <Link href="/dashboard/billing/plans#credits" className="btn-primary">Buy credits</Link>}
+                <Link href="/dashboard/billing/plans" className={payg ? 'btn-ghost' : 'btn-primary'}>{current === 'FREE' || trial ? 'Choose a plan' : 'Manage plan'}</Link>
                 {paidRunning && !cancelled && !ws.nextPlan && <CancelButton until={day(ws.periodEnd)} />}
               </div>
             )}
           </div>
           <div className="space-y-5 rounded-xl bg-canvas/60 p-5">
-            <Meter label="Messages this month" used={used} limit={limits.messages} />
+            {payg
+              ? <>{limits.messages > 0 && <Meter label="Free messages this month" used={Math.min(used, limits.messages)} limit={limits.messages} />}
+                  <p className="flex justify-between text-sm"><span className="font-semibold">Messages sent this month</span><span className="tabular-nums text-slate">{fmtNum(used)}</span></p></>
+              : <Meter label="Messages this month" used={used} limit={limits.messages} />}
             <Meter label="Connected accounts" used={accounts} limit={limits.accounts} />
             <Meter label="Team members" used={members} limit={limits.members} />
             {(ws.credits > 0 || creditCfg.enabled) && (
               <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-4 text-sm">
-                <span><strong>{fmtNum(ws.credits)}</strong> <span className="text-slate">message credits (used after monthly messages)</span></span>
+                <span><strong>{fmtNum(ws.credits)}</strong> <span className="text-slate">message credits{payg ? ' (1 per message)' : ' (used after monthly messages)'}</span></span>
                 {creditCfg.enabled && canManage && <Link href="/dashboard/billing/plans#credits" className="font-semibold text-sky hover:underline">Buy credits</Link>}
               </div>
             )}

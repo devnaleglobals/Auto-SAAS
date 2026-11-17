@@ -90,7 +90,11 @@ export async function POST(req) {
       break;
     case 'subscription.cancelled':
     case 'subscription.completed':
-      if (!ws.nextSubId) await alertPayment(ws.id, 'cancelled').catch(() => {}); // a scheduled downgrade isn't a cancellation
+      if (!ws.nextSubId && !ws.nextPlan) await alertPayment(ws.id, 'cancelled').catch(() => {}); // a scheduled change isn't a cancellation
+      // Moving to pay as you go: switch once the paid period is over (or right away if it already is).
+      if (ws.nextPlan === 'PAYG' && !ws.nextSubId && (!periodEnd || new Date(periodEnd) <= new Date(Date.now() + 3600_000))) {
+        Object.assign(data, { plan: 'PAYG', subStatus: 'active', razorpaySubId: null, periodEnd: null, nextPlan: null, nextStartAt: null });
+      }
       break;
     default:
       break;

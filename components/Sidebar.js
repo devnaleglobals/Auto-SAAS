@@ -76,7 +76,17 @@ export default function Sidebar({ user, workspace, workspaces, role, plan }) {
           </div>
         ))}
       </nav>
-      {plan && (
+      {plan?.payg && (
+        <div className="mx-3 mb-3 rounded-lg border border-white/10 p-3">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-white">{plan.name}</span>
+            <span className={`tabular-nums ${plan.credits > 0 ? 'text-white/60' : 'font-semibold text-bad'}`}>{plan.credits.toLocaleString('en-IN')} credits</span>
+          </div>
+          <p className="mt-1.5 text-[11px] text-white/50">{plan.used.toLocaleString('en-IN')} messages sent this month</p>
+          {plan.canUpgrade && <Link href="/dashboard/billing/plans#credits" onClick={() => setOpen(false)} className="mt-2 block rounded-md bg-marigold px-2 py-1.5 text-center text-xs font-semibold text-navy transition-colors hover:bg-marigoldDark">Buy credits</Link>}
+        </div>
+      )}
+      {plan && !plan.payg && (
         <div className="mx-3 mb-3 rounded-lg border border-white/10 p-3">
           <div className="flex items-center justify-between text-xs">
             <span className="font-semibold text-white">{plan.name} plan</span>

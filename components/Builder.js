@@ -60,7 +60,7 @@ function Buttons({ items }) {
   return <div className="ml-auto w-[85%] space-y-1">{items.map((b, i) => <div key={i} className="rounded-xl border border-line bg-white px-3 py-1.5 text-center text-sm font-semibold text-sky">{b.title || 'Button'}{b.action === 'url' && ' ↗'}</div>)}</div>;
 }
 
-export default function Builder({ channels, initial, type: typeProp, initialChannelId }) {
+export default function Builder({ channels, initial, type: typeProp, initialChannelId, saveUrl, doneUrl }) {
   const router = useRouter();
   const { toast } = useFeedback();
   const editing = Boolean(initial?.id);
@@ -145,7 +145,7 @@ export default function Builder({ channels, initial, type: typeProp, initialChan
       maxReplies: maxReplies || null,
       mediaId: post?.id, mediaPermalink: post?.permalink, mediaCaption: post?.caption, mediaThumb: post?.image,
     };
-    const res = await fetch(editing ? `/api/automations/${initial.id}` : '/api/automations', {
+    const res = await fetch(saveUrl || (editing ? `/api/automations/${initial.id}` : '/api/automations'), {
       method: editing ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
     });
     const data = await res.json().catch(() => ({}));
@@ -156,7 +156,7 @@ export default function Builder({ channels, initial, type: typeProp, initialChan
       return;
     }
     toast(editing ? 'Changes saved' : 'Automation started');
-    router.push(`/dashboard/automations/${editing ? initial.id : data.id}`);
+    router.push(doneUrl || `/dashboard/automations/${editing ? initial.id : data.id}`);
     router.refresh();
   }
 

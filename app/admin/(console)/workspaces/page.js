@@ -53,7 +53,7 @@ export default async function AdminWorkspaces({ searchParams }) {
                 <tr key={w.id} className="border-b border-line last:border-0 hover:bg-canvas">
                   <td className="td"><Link href={`/admin/workspaces/${w.id}`} className="font-semibold hover:underline">{w.name}</Link></td>
                   <td className="td"><span className="block">{owner?.name || '–'}</span><span className="block text-xs text-slate">{owner?.email || 'Social sign-in'}</span></td>
-                  <td className="td">{PLANS[effectivePlan(w)].name}{w.plan !== 'FREE' && !w.razorpaySubId && <span className="block text-xs text-slate">complimentary</span>}</td>
+                  <td className="td">{PLANS[effectivePlan(w)].name}{effectivePlan(w) === 'PAYG' && <span className="block text-xs text-slate">{(w.credits || 0).toLocaleString('en-IN')} credits</span>}{!['FREE', 'PAYG'].includes(w.plan) && !w.razorpaySubId && <span className="block text-xs text-slate">complimentary</span>}</td>
                   <td className="td tabular-nums"><span className={used >= cap ? 'font-semibold text-bad' : ''}>{fmtNum(used)}</span><span className="text-slate"> / {fmtNum(cap)}</span></td>
                   <td className="td tabular-nums">{w._count.channels}</td>
                   <td className="td tabular-nums">{w._count.memberships}</td>

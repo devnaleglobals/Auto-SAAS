@@ -6,7 +6,7 @@ import { PageHeader, Notice, fmtNum } from '@/components/ui';
 import { PLANS, PAID, FEATURES_ALL, effectivePlan, rupees, onTrial } from '@/lib/plans';
 import { billingConfigured } from '@/lib/razorpay';
 import { BuyCreditsButton } from '@/components/BillingActions';
-import { getCreditSettings } from '@/lib/credits';
+import { getCreditSettings, bestRate } from '@/lib/credits';
 import { getBillingPolicy, hasRunningPaidPlan } from '@/lib/planChange';
 import BillingPlanCards from '@/components/BillingPlanCards';
 
@@ -29,25 +29,27 @@ export default async function ManagePlan() {
       {ws.nextPlan && <Notice tone="warn">A change to {PLANS[ws.nextPlan]?.name} is scheduled for {day(ws.nextStartAt)}. Contact support if you want to change it.</Notice>}
 
       <BillingPlanCards
-        current={running || current === 'FREE' ? current : null}
+        current={running || current === 'FREE' || (current === 'PAYG' && !onTrial(ws)) ? current : null}
         currentPrice={running ? PLANS[ws.plan].price : 0}
         canBuy={payOn && !ws.nextPlan}
-        plans={Object.entries(PLANS).filter(([key, p]) => p.active !== false || key === current).map(([key, p]) => ({ key, ...p, paid: PAID.includes(key) }))}
+        plans={Object.entries(PLANS).filter(([key, p]) => (p.active !== false && (key !== 'PAYG' || creditCfg.enabled)) || key === current).map(([key, p]) => ({ key, ...p, paid: PAID.includes(key) }))}
+        payg={{ rate: bestRate(creditCfg.packs), credits: ws.credits || 0, paidUntil: ws.razorpaySubId && PAID.includes(ws.plan) && ws.periodEnd && new Date(ws.periodEnd) > new Date() ? day(ws.periodEnd) : null }}
       />
 
       <section className="card mt-8 p-6">
         <h2 className="font-display text-lg font-bold">How changing plan works</h2>
-        <dl className="mt-4 grid gap-5 text-sm md:grid-cols-3">
+        <dl className={`mt-4 grid gap-5 text-sm ${creditCfg.enabled ? 'md:grid-cols-2 xl:grid-cols-4' : 'md:grid-cols-3'}`}>
           <div><dt className="font-semibold">Upgrading</dt><dd className="mt-1 text-slate">The new plan starts immediately and is charged today; your billing date moves to today.{policy.upgradeRefund ? ' The unused days of your current plan are refunded to your original payment method (5–7 working days).' : ''} Messages already used this month count towards the new, higher limit.</dd></div>
           <div><dt className="font-semibold">Downgrading</dt><dd className="mt-1 text-slate">You keep your current plan until the end of the period you paid for{running ? ` (${day(ws.periodEnd)})` : ''}. The cheaper plan starts then and is charged on that date. If you’ve used more messages than the new limit, sending pauses until the next month.</dd></div>
+          {creditCfg.enabled && <div><dt className="font-semibold">Pay as you go</dt><dd className="mt-1 text-slate">No monthly fee: each message uses 1 credit, and credits never expire. From a paid plan, you keep it until the period you paid for ends{running ? ` (${day(ws.periodEnd)})` : ''}, then switch with no further charges. You can go back to a monthly plan any time.</dd></div>}
           <div><dt className="font-semibold">Moving to Free</dt><dd className="mt-1 text-slate">Cancel from the Billing page. You keep your paid plan until the period ends, with no further charges.</dd></div>
         </dl>
       </section>
 
       {creditCfg.enabled && (
         <section id="credits" className="mt-10 scroll-mt-24">
-          <h2 className="font-display text-xl font-bold">Pay as you go: message credits</h2>
-          <p className="mt-1 max-w-3xl text-sm text-slate">Need more messages without changing plan? Buy credits once. They’re used only after your plan’s monthly messages run out, and they never expire. You have <strong className="text-ink">{fmtNum(ws.credits)}</strong> credits.</p>
+          <h2 className="font-display text-xl font-bold">Message credits</h2>
+          <p className="mt-1 max-w-3xl text-sm text-slate">{current === 'PAYG' ? 'On pay as you go, every message uses 1 credit. Top up whenever you like; credits never expire.' : 'Need more messages without changing plan? Buy credits once. They’re used only after your plan’s monthly messages run out, and they never expire.'} You have <strong className="text-ink">{fmtNum(ws.credits)}</strong> credits.</p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {creditCfg.packs.filter((p) => p.credits > 0 && p.price > 0).map((p, i) => (
               <div key={p.id} className="card flex flex-col p-5">

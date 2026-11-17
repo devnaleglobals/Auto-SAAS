@@ -7,12 +7,13 @@ const TABS = [
   ['/admin', 'Overview', null],
   ['/admin/workspaces', 'Clients', 'clients.view'],
   ['/admin/users', 'Users', 'clients.view'],
+  ['/admin/automations', 'Automations', 'automations'],
   ['/admin/tickets', 'Tickets', 'tickets'],
   ['/admin/payments', 'Payments', 'billing'],
   ['/admin/emails', 'Emails', 'emails'],
   ['/admin/settings', 'Settings', null],
   ['/admin/system', 'System', 'settings'],
-  ['/admin/audit', 'Audit log', 'settings'],
+  ['/admin/audit', 'Audit', 'settings'],
 ];
 
 export default function AdminNav({ admin, perms, openTickets }) {
@@ -24,10 +25,10 @@ export default function AdminNav({ admin, perms, openTickets }) {
         <Link href="/admin" className="flex items-center gap-2 font-display text-lg font-bold">
           ReplyRelay <span className="rounded-md bg-marigold px-1.5 py-0.5 text-xs font-bold text-navy">Admin</span>
         </Link>
-        <nav className="flex flex-1 flex-wrap gap-1" aria-label="Admin">
+        <nav className="flex flex-1 flex-wrap gap-0.5" aria-label="Admin">
           {TABS.filter(([, , p]) => !p || perms.includes(p)).map(([href, label]) => (
             <Link key={href} href={href} aria-current={active(href) ? 'page' : undefined}
-              className={`rounded-lg px-2.5 py-1.5 text-sm font-semibold transition-colors ${active(href) ? 'bg-white text-ink' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+              className={`rounded-lg px-2 py-1.5 text-sm font-semibold transition-colors ${active(href) ? 'bg-white text-ink' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
               {label}{label === 'Tickets' && openTickets > 0 && <span className="ml-1.5 rounded-full bg-marigold px-1.5 text-xs text-navy">{openTickets}</span>}
             </Link>
           ))}
