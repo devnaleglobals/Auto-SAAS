@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { verifyWebhook } from '@/lib/razorpay';
 import { planFromRazorpayId, loadPlans, PLANS, rupees } from '@/lib/plans';
 import { alertPayment } from '@/lib/notify';
+import { completeCreditOrder } from '@/lib/credits';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,17 @@ export async function POST(req) {
   await loadPlans();
   let body;
   try { body = JSON.parse(raw); } catch { return new Response('Bad JSON', { status: 400 }); }
+  // Pay-as-you-go credit packs (one-time orders).
+  if (body.event === 'order.paid' || body.event === 'payment.captured') {
+    const order = body.payload?.order?.entity;
+    const pay = body.payload?.payment?.entity;
+    const orderId = order?.id || pay?.order_id;
+    if (orderId && (order?.notes?.kind === 'credits' || pay?.notes?.kind === 'credits' || (await prisma.creditTxn.findUnique({ where: { orderId } })))) {
+      await completeCreditOrder(orderId, { paymentId: pay?.id || null, method: pay?.method || null });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
   const sub = body.payload?.subscription?.entity;
   if (!sub?.id) return NextResponse.json({ ok: true });
 

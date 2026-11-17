@@ -15,6 +15,7 @@ export default function AdminWorkspaceActions({ ws, can, plans: PLAN_OPTIONS }) 
   const [trialPlan, setTrialPlan] = useState(ws.trialPlan || 'PRO');
   const [trialUntil, setTrialUntil] = useState((ws.trialEndsAt && new Date(ws.trialEndsAt) > new Date() ? ws.trialEndsAt : new Date(Date.now() + 14 * 86400000).toISOString()).slice(0, 10));
   const [delName, setDelName] = useState('');
+  const [cr, setCr] = useState({ delta: '', note: '' });
 
   async function act(action, body, ok) {
     setBusy(action);
@@ -77,6 +78,16 @@ export default function AdminWorkspaceActions({ ws, can, plans: PLAN_OPTIONS }) 
         <div className="mt-4 flex flex-wrap gap-2">
           <button className="btn-ghost" disabled={!!busy} onClick={async () => { if (await confirm({ title: 'Cancel at the end of the paid period?', body: 'The client keeps the plan until the period ends, then moves to Free.', confirmLabel: 'Cancel at period end' })) act('cancelSubscription', { when: 'cycle_end' }, 'Subscription will end at period end'); }}>Cancel at period end</button>
           <button className="btn-danger" disabled={!!busy} onClick={async () => { if (await confirm({ title: 'Cancel immediately?', body: 'The client moves to Free now. Refund any unused amount in Razorpay if needed.', confirmLabel: 'Cancel now', danger: true })) act('cancelSubscription', { when: 'now' }, 'Subscription cancelled'); }}>Cancel now</button>
+        </div>
+      </section>}
+
+      {can.billing && <section className="card p-5">
+        <h2 className="font-display text-lg font-bold">Message credits</h2>
+        <p className="mt-1 text-sm text-slate">Balance: <strong className="text-ink">{Number(ws.credits || 0).toLocaleString('en-IN')}</strong>. Add credits as goodwill or for an offline payment; use a minus sign to remove.</p>
+        <div className="mt-4 grid gap-2 sm:grid-cols-[120px_1fr_auto]">
+          <input type="number" className="field" placeholder="e.g. 500" value={cr.delta} onChange={(e) => setCr({ ...cr, delta: e.target.value })} aria-label="Credits to add or remove" />
+          <input className="field" placeholder="Reason (e.g. Paid by bank transfer, inv 102)" value={cr.note} onChange={(e) => setCr({ ...cr, note: e.target.value })} aria-label="Reason" />
+          <button className="btn-dark" disabled={!!busy || !cr.delta || !cr.note.trim()} onClick={async () => { await act('credits', cr, 'Credits updated'); setCr({ delta: '', note: '' }); }}>{busy === 'credits' && <Spinner />}Apply</button>
         </div>
       </section>}
 

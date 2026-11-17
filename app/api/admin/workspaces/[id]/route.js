@@ -4,9 +4,10 @@ import { requireAdminApi, adminLog } from '@/lib/admin';
 import { PLANS, PLAN_KEYS, currentMonth } from '@/lib/plans';
 import { rzp } from '@/lib/razorpay';
 import { deleteWorkspace } from '@/lib/account';
+import { adjustCredits } from '@/lib/credits';
 
 const EDIT = ['plan', 'suspend', 'resume', 'resetUsage', 'note', 'details', 'trial'];
-const BILLING = ['plan', 'trial', 'cancelSubscription', 'resetUsage'];
+const BILLING = ['plan', 'trial', 'cancelSubscription', 'resetUsage', 'credits'];
 
 // Admin actions on one client workspace.
 export async function PATCH(req, { params }) {
@@ -76,6 +77,15 @@ export async function PATCH(req, { params }) {
       if (!PLAN_KEYS.slice(1).includes(b.plan) || isNaN(until) || until <= new Date()) return NextResponse.json({ error: 'Choose the trial plan and a future end date.' }, { status: 400 });
       await prisma.workspace.update({ where: { id }, data: { trialPlan: b.plan, trialEndsAt: until } });
       await adminLog(admin, 'trial_set', { workspaceId: id, detail: `${ws.name}: ${PLANS[b.plan].name} until ${until.toISOString().slice(0, 10)}` });
+      break;
+    }
+    case 'credits': {
+      const delta = parseInt(b.delta, 10);
+      if (!Number.isFinite(delta) || delta === 0 || Math.abs(delta) > 10_000_000) return NextResponse.json({ error: 'Enter how many credits to add (or remove with a minus sign).' }, { status: 400 });
+      const note = String(b.note || '').trim().slice(0, 200);
+      if (!note) return NextResponse.json({ error: 'Write a reason (shown in the credit history).' }, { status: 400 });
+      const change = await adjustCredits(id, delta, `${note} (by ${admin.email})`);
+      await adminLog(admin, 'credits_adjusted', { workspaceId: id, detail: `${ws.name}: ${change > 0 ? '+' : ''}${change} (${note})` });
       break;
     }
     case 'cancelSubscription': {

@@ -7,7 +7,7 @@ export const revalidate = 60; // admin price changes show within a minute
 export const metadata = { title: 'Pricing — ReplyRelay', description: 'Simple monthly plans in rupees. Free trial, no card needed.' };
 
 export default async function Pricing() {
-  const { plans, trial, features } = await publicPricing();
+  const { plans, trial, features, credits } = await publicPricing();
   const FAQ = [
     ['How does the free trial work?', trial ? `New accounts get the ${trial.plan} plan free for ${trial.days} days, no card needed. After that you stay on Free unless you choose a plan.` : 'You can start on the Free plan without a card and upgrade anytime.'],
     ['What counts as a message?', 'Every private message, conversation message, reminder and public comment reply ReplyRelay sends. Hiding a spam comment doesn’t count.'],
@@ -26,6 +26,22 @@ export default async function Pricing() {
         <p className="mt-3 text-xs text-slate">All prices in Indian rupees (INR), billed monthly. Applicable GST is shown on your invoice. <Link href="/refunds" className="underline">Refund &amp; cancellation policy</Link>.</p>
 
         <PricingCards plans={plans} trial={trial} />
+
+        {credits.length > 0 && (
+          <section className="mt-12">
+            <h2 className="font-display text-2xl font-bold">Pay as you go</h2>
+            <p className="mt-2 max-w-2xl text-sm text-slate">Need more messages some months? Buy message credits once, on any plan (even Free). They’re used after your monthly messages run out and never expire.</p>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {credits.map((p) => (
+                <div key={p.id} className="card p-5">
+                  <p className="font-display text-lg font-bold">{p.name}</p>
+                  <p className="mt-1"><span className="font-display text-3xl font-bold">₹{Number(p.price).toLocaleString('en-IN')}</span><span className="text-sm text-slate"> one time</span></p>
+                  <p className="mt-1 text-sm text-slate">₹{(Math.round((p.price / p.credits) * 10000) / 100).toLocaleString('en-IN')} per 100 messages</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <div className="card mt-10 p-6">
           <h2 className="font-display text-lg font-bold">Included in every plan</h2>

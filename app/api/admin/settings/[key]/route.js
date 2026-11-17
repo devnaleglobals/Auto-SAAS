@@ -84,6 +84,20 @@ const RULES = {
       return [out, null];
     },
   },
+  credits: {
+    perm: 'billing',
+    clean(b) {
+      const packs = [];
+      for (const [i, p] of (Array.isArray(b.packs) ? b.packs : []).slice(0, 6).entries()) {
+        const credits = int(p.credits, 1, 10_000_000); const price = int(p.price, 1, 10_000_000);
+        if (!credits && !price && !str(p.name)) continue;
+        if (!credits || !price) return [null, `Pack ${i + 1}: set the number of messages and the price.`];
+        packs.push({ id: str(p.id, 20) || `p${Date.now().toString(36)}${i}`, name: str(p.name, 40) || `${credits.toLocaleString('en-IN')} messages`, credits, price });
+      }
+      if (b.enabled && !packs.length) return [null, 'Add at least one credit pack.'];
+      return [{ enabled: Boolean(b.enabled), packs }, null];
+    },
+  },
   payments: {
     perm: 'billing',
     secrets: ['keySecret', 'webhookSecret'],

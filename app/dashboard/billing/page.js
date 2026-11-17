@@ -3,7 +3,9 @@ import { requireContext } from '@/lib/context';
 import { PageHeader, Notice, fmtNum } from '@/components/ui';
 import { PLANS, PAID, FEATURES_ALL, effectivePlan, usageThisMonth, rupees, onTrial } from '@/lib/plans';
 import { billingConfigured } from '@/lib/razorpay';
-import { UpgradeButton, CancelButton, BillingDetails } from '@/components/BillingActions';
+import { CancelButton, BillingDetails, BuyCreditsButton } from '@/components/BillingActions';
+import { getCreditSettings } from '@/lib/credits';
+import BillingPlanCards from '@/components/BillingPlanCards';
 
 export const dynamic = 'force-dynamic';
 const day = (d) => (d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
@@ -26,6 +28,7 @@ export default async function Billing({ searchParams }) {
   const sp = await searchParams;
   const ws = await prisma.workspace.findUnique({ where: { id: ctx.workspace.id } });
   const payOn = await billingConfigured();
+  const creditCfg = await getCreditSettings();
   const trial = onTrial(ws);
   const current = effectivePlan(ws);
   const limits = PLANS[current];
@@ -46,7 +49,8 @@ export default async function Billing({ searchParams }) {
       {pastDue && <Notice tone="bad">Your last renewal didn’t go through. Razorpay will retry; your plan stays active until {day(ws.periodEnd)}.</Notice>}
       {trial && <Notice tone="warn">You’re on a free {PLANS[current].name} trial until {day(ws.trialEndsAt)}. Choose a plan below to keep these limits after that.</Notice>}
       {cancelled && <Notice tone="warn">Your {PLANS[current].name} plan is cancelled and stays active until {day(ws.periodEnd)}. Then it moves to Free.</Notice>}
-      {used >= limits.messages && <Notice tone="bad">You’ve used all {fmtNum(limits.messages)} messages this month, so automations are paused until next month or an upgrade.</Notice>}
+      {used >= limits.messages && !(ws.credits > 0) && <Notice tone="bad">You’ve used all {fmtNum(limits.messages)} messages this month, so automations are paused until next month{creditCfg.enabled ? ', an upgrade, or a credit pack below' : ' or an upgrade'}.</Notice>}
+      {used >= limits.messages && ws.credits > 0 && <Notice tone="warn">Your monthly messages are used up; automations keep running on your {fmtNum(ws.credits)} credits.</Notice>}
 
       <section className="card grid gap-6 p-6 lg:grid-cols-[240px_1fr]">
         <div>
@@ -61,6 +65,7 @@ export default async function Billing({ searchParams }) {
         </div>
         <div className="space-y-5">
           <Meter label="Messages this month" used={used} limit={limits.messages} />
+          {(ws.credits > 0 || creditCfg.enabled) && <p className="-mt-2 text-sm"><strong>{fmtNum(ws.credits)}</strong> <span className="text-slate">pay-as-you-go credits left, used after the monthly messages run out</span></p>}
           <Meter label="Connected accounts" used={accounts} limit={limits.accounts} />
           <Meter label="Team members" used={members} limit={limits.members} />
           <p className="text-xs text-slate">Messages count every private message, conversation message, reminder and public reply sent. Usage resets on the 1st of each month.</p>
@@ -69,25 +74,29 @@ export default async function Billing({ searchParams }) {
 
       <h2 className="mb-4 mt-10 font-display text-xl font-bold">Plans</h2>
       {!payOn && canManage && <Notice tone="warn">Online payments aren’t available right now. Contact support to change your plan.</Notice>}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {Object.entries(PLANS).filter(([key, p]) => p.active !== false || key === current).map(([key, p]) => (
-          <div key={key} className={`card flex flex-col p-5 ${p.popular ? 'border-ink ring-1 ring-ink' : ''}`}>
-            <div className="flex items-center justify-between"><h3 className="font-display text-lg font-bold">{p.name}</h3>{p.popular && <span className="rounded-full bg-marigold/25 px-2 py-0.5 text-xs font-semibold">Most popular</span>}</div>
-            <p className="mt-2"><span className="font-display text-3xl font-bold">{rupees(p.price)}</span>{p.price > 0 && <span className="text-sm text-slate"> / month</span>}</p>
-            <p className="mt-2 text-sm text-slate">{p.blurb}</p>
-            <ul className="mt-4 space-y-1.5 text-sm">
-              <li><strong>{fmtNum(p.messages)}</strong> messages a month</li>
-              <li><strong>{p.accounts}</strong> account{p.accounts > 1 ? 's' : ''}</li>
-              <li><strong>{p.members}</strong> team member{p.members > 1 ? 's' : ''}</li>
-            </ul>
-            <div className="mt-auto pt-5">
-              {key === current ? <p className="rounded-lg bg-canvas py-2.5 text-center text-sm font-semibold">Your plan</p>
-                : PAID.includes(key) && canManage && payOn ? <UpgradeButton plan={key} primary={p.popular} label={PLANS[current].price > p.price ? `Switch to ${p.name}` : `Upgrade to ${p.name}`} />
-                : null}
-            </div>
+      <BillingPlanCards
+        current={current}
+        currentPrice={PLANS[current].price}
+        canBuy={canManage && payOn}
+        plans={Object.entries(PLANS).filter(([key, p]) => p.active !== false || key === current).map(([key, p]) => ({ key, ...p, paid: PAID.includes(key) }))}
+      />
+      {creditCfg.enabled && (
+        <section className="mt-10">
+          <h2 className="font-display text-xl font-bold">Pay as you go: message credits</h2>
+          <p className="mt-1 max-w-3xl text-sm text-slate">Need more messages without changing plan? Buy credits once. They’re used only after your plan’s monthly messages run out, and they never expire. You have <strong className="text-ink">{fmtNum(ws.credits)}</strong> credits.</p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {creditCfg.packs.filter((p) => p.credits > 0 && p.price > 0).map((p, i) => (
+              <div key={p.id} className="card flex flex-col p-5">
+                <p className="font-display text-lg font-bold">{p.name}</p>
+                <p className="mt-1"><span className="font-display text-3xl font-bold">{rupees(p.price)}</span><span className="text-sm text-slate"> one time</span></p>
+                <p className="mt-1 text-sm text-slate">{fmtNum(p.credits)} messages · {rupees(Math.round((p.price / p.credits) * 10000) / 100)} per 100</p>
+                <div className="mt-auto pt-4">{canManage && payOn ? <BuyCreditsButton packId={p.id} label={`Buy ${fmtNum(p.credits)} credits`} primary={i === 1} /> : <p className="text-xs text-slate">Only the workspace owner can buy credits.</p>}</div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </section>
+      )}
+
       <div className="mt-10">
         <BillingDetails canEdit={canManage} initial={{
           billingName: ws.billingName || ws.name || '', billingEmail: ws.billingEmail || ctx.user.email || '',
@@ -106,7 +115,7 @@ export default async function Billing({ searchParams }) {
               {payments.map((p) => (
                 <tr key={p.id} className="border-b border-line last:border-0">
                   <td className="td whitespace-nowrap">{day(p.createdAt)}</td>
-                  <td className="td">{PLANS[p.plan]?.name || p.plan || '–'}</td>
+                  <td className="td">{p.plan === 'CREDITS' ? 'Message credits' : PLANS[p.plan]?.name || p.plan || '–'}</td>
                   <td className="td tabular-nums">{rupees(Math.round(p.amount / 100))}</td>
                   <td className="td capitalize">{p.method || '–'}</td>
                   <td className="td"><span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${p.status === 'captured' ? 'bg-ok/10 text-ok' : 'bg-bad/10 text-bad'}`}>{p.status === 'captured' ? 'Paid' : p.status === 'refunded' ? 'Refunded' : 'Failed'}</span></td>

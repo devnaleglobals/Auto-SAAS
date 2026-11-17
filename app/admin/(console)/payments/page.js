@@ -34,7 +34,7 @@ export default async function AdminPayments() {
               <tr key={p.id} className="border-b border-line last:border-0">
                 <td className="td whitespace-nowrap">{fmtDate(p.createdAt)}</td>
                 <td className="td"><Link href={`/admin/workspaces/${p.workspace.id}`} className="font-semibold hover:underline">{p.workspace.name}</Link></td>
-                <td className="td">{PLANS[p.plan]?.name || '–'}</td>
+                <td className="td">{p.plan === 'CREDITS' ? 'Message credits' : PLANS[p.plan]?.name || '–'}</td>
                 <td className="td tabular-nums">{r(p.amount)}</td>
                 <td className="td capitalize">{p.method || '–'}</td>
                 <td className="td"><span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${p.status === 'captured' ? 'bg-ok/10 text-ok' : 'bg-bad/10 text-bad'}`}>{p.status === 'captured' ? 'Paid' : p.status}</span></td>

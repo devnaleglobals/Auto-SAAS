@@ -23,6 +23,7 @@ export default async function AdminWorkspace({ params }) {
       automations: { orderBy: { createdAt: 'desc' }, include: { channel: { select: { platform: true, username: true } } } },
       payments: { orderBy: { createdAt: 'desc' }, take: 12 },
       tickets: { orderBy: { lastReplyAt: 'desc' }, take: 10 },
+      creditTxns: { where: { status: 'PAID' }, orderBy: { createdAt: 'desc' }, take: 10 },
     },
   });
   if (!ws) notFound();
@@ -46,7 +47,7 @@ export default async function AdminWorkspace({ params }) {
         <Stat label="Plan" value={PLANS[plan].name} sub={onTrial(ws) ? `Free trial until ${fmtDate(ws.trialEndsAt)}` : ws.periodEnd ? `${ws.razorpaySubId ? `Razorpay (${ws.subStatus})` : 'Complimentary'} until ${fmtDate(ws.periodEnd)}` : 'No paid period'} />
         <Stat label="Messages this month" value={fmtNum(usageThisMonth(ws))} sub={`of ${fmtNum(limitsOf(ws).messages)}`} />
         <Stat label="Total paid" value={rupees(Math.round(paid / 100))} sub={`${ws.payments.length} payment${ws.payments.length === 1 ? '' : 's'}`} />
-        <Stat label="Leads collected" value={fmtNum(leads)} />
+        <Stat label="Message credits" value={fmtNum(ws.credits)} sub={`${fmtNum(leads)} leads collected`} />
       </StatGrid></div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
@@ -99,6 +100,10 @@ export default async function AdminWorkspace({ params }) {
               <ul className="card divide-y divide-line text-sm">{ws.tickets.map((t) => <li key={t.id}><Link href={`/admin/tickets/${t.id}`} className="flex justify-between gap-3 px-4 py-2.5 hover:bg-canvas"><span><strong>#{t.number}</strong> {t.subject}</span><StatusBadge s={t.status} /></Link></li>)}</ul>
             )}
           </section>
+          {ws.creditTxns.length > 0 && <section>
+            <h2 className="mb-3 font-display text-lg font-bold">Credit history</h2>
+            <ul className="card divide-y divide-line text-sm">{ws.creditTxns.map((c) => <li key={c.id} className="flex flex-wrap justify-between gap-2 px-4 py-2.5"><span><strong className={c.credits > 0 ? 'text-ok' : 'text-bad'}>{c.credits > 0 ? '+' : ''}{fmtNum(c.credits)}</strong> {c.kind === 'PURCHASE' ? `bought ${c.packName || ''} for ${rupees(Math.round(c.amount / 100))}` : c.note}</span><span className="text-xs text-slate">{fmtDate(c.createdAt)}</span></li>)}</ul>
+          </section>}
           <section>
             <h2 className="mb-3 font-display text-lg font-bold">Billing details</h2>
             <dl className="card grid gap-2 p-4 text-sm sm:grid-cols-[140px_1fr]">
@@ -122,7 +127,7 @@ export default async function AdminWorkspace({ params }) {
           plans={PLAN_KEYS.map((k) => [k, PLANS[k].name])}
           ws={{
             id: ws.id, name: ws.name, plan: ws.plan, periodEnd: ws.periodEnd?.toISOString() || null, suspended: ws.suspended, suspendReason: ws.suspendReason, adminNote: ws.adminNote,
-            trialPlan: ws.trialPlan, trialEndsAt: ws.trialEndsAt?.toISOString() || null, razorpaySubId: ws.razorpaySubId, subStatus: ws.subStatus,
+            credits: ws.credits, trialPlan: ws.trialPlan, trialEndsAt: ws.trialEndsAt?.toISOString() || null, razorpaySubId: ws.razorpaySubId, subStatus: ws.subStatus,
             billingName: ws.billingName || '', billingEmail: ws.billingEmail || '', billingPhone: ws.billingPhone || '', billingGstin: ws.billingGstin || '', billingAddress: ws.billingAddress || '',
           }} />
       </div>

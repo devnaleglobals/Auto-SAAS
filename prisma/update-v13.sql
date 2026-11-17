@@ -117,3 +117,24 @@ CREATE INDEX IF NOT EXISTS "EmailLog_createdAt_idx" ON "EmailLog"("createdAt");
 DO $$ BEGIN ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_workspaceId_fkey" FOREIGN KEY ("workspaceId") REFERENCES "Workspace"("id") ON DELETE SET NULL ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_assignedToId_fkey" FOREIGN KEY ("assignedToId") REFERENCES "Admin"("id") ON DELETE SET NULL ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN ALTER TABLE "TicketMessage" ADD CONSTRAINT "TicketMessage_ticketId_fkey" FOREIGN KEY ("ticketId") REFERENCES "Ticket"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- ---------- v13.1: pay-as-you-go message credits ----------
+ALTER TABLE "Workspace" ADD COLUMN IF NOT EXISTS "credits" INTEGER NOT NULL DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS "CreditTxn" (
+    "id" TEXT NOT NULL,
+    "workspaceId" TEXT NOT NULL,
+    "kind" TEXT NOT NULL,
+    "credits" INTEGER NOT NULL,
+    "amount" INTEGER NOT NULL DEFAULT 0,
+    "packName" TEXT,
+    "orderId" TEXT,
+    "paymentId" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'PAID',
+    "note" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "CreditTxn_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "CreditTxn_orderId_key" ON "CreditTxn"("orderId");
+CREATE INDEX IF NOT EXISTS "CreditTxn_workspaceId_createdAt_idx" ON "CreditTxn"("workspaceId", "createdAt");
+DO $$ BEGIN ALTER TABLE "CreditTxn" ADD CONSTRAINT "CreditTxn_workspaceId_fkey" FOREIGN KEY ("workspaceId") REFERENCES "Workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;

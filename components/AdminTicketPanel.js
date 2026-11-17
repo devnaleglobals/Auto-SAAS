@@ -1,39 +1,62 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useFeedback, Spinner } from './Feedback';
 
-export default function AdminTicketPanel({ ticket, admins }) {
+const STATUS = [['OPEN', 'Open'], ['PENDING', 'Waiting for client'], ['RESOLVED', 'Resolved'], ['CLOSED', 'Closed']];
+const PRIORITY = [['LOW', 'Low'], ['NORMAL', 'Normal'], ['HIGH', 'High'], ['URGENT', 'Urgent']];
+
+// Right-hand panel on the admin ticket page: status, priority, owner, and who the client is.
+export default function AdminTicketPanel({ ticket, admins, client, others }) {
   const router = useRouter();
   const { toast } = useFeedback();
-  const [body, setBody] = useState('');
-  const [internal, setInternal] = useState(false);
-  const [after, setAfter] = useState('PENDING');
   const [busy, setBusy] = useState('');
-  async function call(url, method, data, okMsg, key) {
+  async function patch(key, value) {
     setBusy(key);
-    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const res = await fetch(`/api/admin/tickets/${ticket.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [key]: value }) });
     const d = await res.json().catch(() => ({}));
     setBusy('');
-    toast(res.ok ? okMsg : d.error || 'That didn’t work.', res.ok ? 'ok' : 'bad');
+    toast(res.ok ? 'Ticket updated' : d.error || 'That didn’t work.', res.ok ? 'ok' : 'bad');
     if (res.ok) router.refresh();
-    return res.ok;
   }
-  const patch = (k) => (e) => call(`/api/admin/tickets/${ticket.id}`, 'PATCH', { [k]: e.target.value }, 'Ticket updated', k);
+  const select = (key, label, options, value) => (
+    <div>
+      <label className="label flex items-center justify-between" htmlFor={`tp-${key}`}>{label}{busy === key && <Spinner />}</label>
+      <select id={`tp-${key}`} className="field" defaultValue={value} onChange={(e) => patch(key, e.target.value)} disabled={!!busy}>
+        {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select>
+    </div>
+  );
   return (
     <aside className="space-y-4">
-      <form className="card p-4" onSubmit={async (e) => { e.preventDefault(); if (await call(`/api/admin/tickets/${ticket.id}/messages`, 'POST', { body, internal, status: internal ? undefined : after }, internal ? 'Note added' : 'Reply sent', 'reply')) setBody(''); }}>
-        <label className="label" htmlFor="tk-reply">{internal ? 'Internal note (admins only)' : 'Reply to the client'}</label>
-        <textarea id="tk-reply" rows={7} className="field" value={body} onChange={(e) => setBody(e.target.value)} required />
-        <label className="mt-2 flex items-center gap-2 text-sm"><input type="checkbox" checked={internal} onChange={(e) => setInternal(e.target.checked)} className="h-4 w-4" /> Internal note (not emailed)</label>
-        {!internal && <div className="mt-2"><label className="label" htmlFor="tk-after">Then set status</label><select id="tk-after" className="field" value={after} onChange={(e) => setAfter(e.target.value)}><option value="PENDING">Waiting for client</option><option value="RESOLVED">Resolved</option><option value="OPEN">Keep open</option></select></div>}
-        <button className="btn-dark mt-3 w-full" disabled={!!busy}>{busy === 'reply' && <Spinner />}{internal ? 'Add note' : 'Send reply'}</button>
-      </form>
-      <div className="card space-y-3 p-4">
-        <div><label className="label" htmlFor="tk-st">Status</label><select id="tk-st" className="field" defaultValue={ticket.status} onChange={patch('status')}><option value="OPEN">Open</option><option value="PENDING">Waiting for client</option><option value="RESOLVED">Resolved</option><option value="CLOSED">Closed</option></select></div>
-        <div><label className="label" htmlFor="tk-pr">Priority</label><select id="tk-pr" className="field" defaultValue={ticket.priority} onChange={patch('priority')}>{['LOW', 'NORMAL', 'HIGH', 'URGENT'].map((p) => <option key={p} value={p}>{p[0] + p.slice(1).toLowerCase()}</option>)}</select></div>
-        <div><label className="label" htmlFor="tk-as">Assigned to</label><select id="tk-as" className="field" defaultValue={ticket.assignedToId} onChange={patch('assignedToId')}><option value="">Nobody</option>{admins.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
-      </div>
+      <section className="card space-y-3 p-4">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-slate">Ticket</h2>
+        {select('status', 'Status', STATUS, ticket.status)}
+        {select('priority', 'Priority', PRIORITY, ticket.priority)}
+        {select('assignedToId', 'Assigned to', [['', 'Nobody'], ...admins.map((a) => [a.id, a.name])], ticket.assignedToId)}
+        {ticket.status !== 'RESOLVED' && <button className="btn-ghost w-full" disabled={!!busy} onClick={() => patch('status', 'RESOLVED')}>Mark as resolved</button>}
+      </section>
+
+      <section className="card p-4 text-sm">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-slate">Client</h2>
+        <p className="mt-2 font-semibold">{client.name}</p>
+        <a href={`mailto:${client.email}`} className="break-all text-slate hover:text-ink">{client.email}</a>
+        {client.workspace ? (
+          <dl className="mt-3 grid grid-cols-[80px_1fr] gap-y-1.5">
+            <dt className="text-slate">Workspace</dt><dd><Link href={`/admin/workspaces/${client.workspace.id}`} className="font-semibold underline">{client.workspace.name}</Link></dd>
+            <dt className="text-slate">Plan</dt><dd>{client.workspace.plan}</dd>
+            {client.workspace.suspended && <><dt className="text-slate">Status</dt><dd className="font-semibold text-bad">Suspended</dd></>}
+          </dl>
+        ) : <p className="mt-3 rounded-lg bg-canvas p-2.5 text-xs text-slate">Website visitor without an account. Replies go to their email.</p>}
+      </section>
+
+      {others.length > 0 && (
+        <section className="card p-4 text-sm">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-slate">Other tickets</h2>
+          <ul className="mt-2 space-y-1.5">{others.map((o) => <li key={o.id}><Link href={`/admin/tickets/${o.id}`} className="hover:underline">#{o.number} {o.subject}</Link> <span className="text-xs text-slate">({o.status.toLowerCase()})</span></li>)}</ul>
+        </section>
+      )}
     </aside>
   );
 }

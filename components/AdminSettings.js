@@ -369,3 +369,30 @@ export function SecurityForms({ totpEnabled }) {
     </div>
   );
 }
+
+// ---------------- Pay-as-you-go credit packs ----------------
+export function CreditsForm({ initial }) {
+  const { v, setV, set, busy, save } = useSettingForm('credits', initial);
+  const packs = v.packs || [];
+  const upd = (i, k) => (e) => setV((o) => ({ ...o, packs: o.packs.map((p, j) => (j === i ? { ...p, [k]: e.target.value } : p)) }));
+  return (
+    <form onSubmit={save} className="mt-6">
+      <Card title="Pay as you go: message credits" description="Clients buy credits once (Razorpay one-time payment). Credits are used only after the plan’s monthly messages run out, and never expire. Combine with the Free plan for a pure pay-as-you-go option.">
+        <Toggle id="cr-on" label="Sell credit packs on the Billing page" checked={v.enabled} onChange={set('enabled')} />
+        <div className="mt-3 space-y-3">
+          {packs.map((p, i) => (
+            <div key={p.id || i} className="grid items-end gap-3 rounded-xl border border-line p-3 sm:grid-cols-[1.4fr_1fr_1fr_auto]">
+              <Field id={`cp-n${i}`} label="Pack name"><input id={`cp-n${i}`} className="field" value={p.name || ''} onChange={upd(i, 'name')} placeholder="5,000 messages" /></Field>
+              <Field id={`cp-c${i}`} label="Messages"><input id={`cp-c${i}`} type="number" min={1} className="field" value={p.credits ?? ''} onChange={upd(i, 'credits')} /></Field>
+              <Field id={`cp-p${i}`} label="Price (₹)"><input id={`cp-p${i}`} type="number" min={1} className="field" value={p.price ?? ''} onChange={upd(i, 'price')} /></Field>
+              <button type="button" className="btn-ghost btn-sm text-bad" onClick={() => setV((o) => ({ ...o, packs: o.packs.filter((_, j) => j !== i) }))}>Remove</button>
+            </div>
+          ))}
+        </div>
+        {packs.length < 6 && <button type="button" className="btn-ghost btn-sm mt-3" onClick={() => setV((o) => ({ ...o, packs: [...(o.packs || []), { name: '', credits: '', price: '' }] }))}>+ Add pack</button>}
+        <p className="hint mt-3">Prices include GST if your plans do. Razorpay sends a payment receipt; issue the GST invoice for credit packs from your accounting software.</p>
+        <SaveBar busy={busy} label="Save credit packs" />
+      </Card>
+    </form>
+  );
+}

@@ -101,3 +101,37 @@ export function CancelButton({ until }) {
   }
   return <button onClick={go} disabled={busy} className="btn-ghost text-bad">{busy && <Spinner />}Cancel plan</button>;
 }
+
+// Pay-as-you-go: buy a message credit pack with a one-time Razorpay payment.
+export function BuyCreditsButton({ packId, label, primary }) {
+  const [busy, setBusy] = useState(false);
+  const router = useRouter();
+  const { toast } = useFeedback();
+  async function go() {
+    setBusy(true);
+    const res = await fetch('/api/billing/credits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ packId }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setBusy(false);
+      toast(data.error || 'Couldn’t start the payment.', 'bad');
+      if (data.needsDetails) document.getElementById('billing-details')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    if (!(await loadCheckout())) { setBusy(false); return toast('Couldn’t open the payment window. Check your connection and try again.', 'bad'); }
+    const rz = new window.Razorpay({
+      key: data.key, order_id: data.orderId, amount: data.amount, currency: 'INR',
+      name: 'ReplyRelay', description: data.description, prefill: data.prefill, theme: { color: '#141B2E' },
+      modal: { ondismiss: () => setBusy(false) },
+      handler: async (resp) => {
+        const v = await fetch('/api/billing/credits/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(resp) });
+        const out = await v.json().catch(() => ({}));
+        setBusy(false);
+        if (v.ok) { toast(`${Number(out.credits).toLocaleString('en-IN')} message credits added. Thank you!`); router.refresh(); }
+        else toast(out.error || 'Payment received; credits will appear shortly.', 'bad');
+      },
+    });
+    rz.on('payment.failed', (r) => { toast(r?.error?.description || 'The payment didn’t go through. Try another method.', 'bad'); });
+    rz.open();
+  }
+  return <button onClick={go} disabled={busy} className={`${primary ? 'btn-primary' : 'btn-dark'} w-full`}>{busy && <Spinner />}{label}</button>;
+}

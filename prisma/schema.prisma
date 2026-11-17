@@ -35,6 +35,7 @@ model Workspace {
   periodEnd   DateTime? // paid access lasts until this date
   usageMonth  String? // "2026-10"
   usageCount  Int          @default(0) // messages + replies sent this month
+  credits     Int          @default(0) // pay-as-you-go message credits, used after the monthly plan messages run out
   // Billing details for GST invoices (sent to Razorpay as the customer)
   billingName   String?
   billingEmail  String?
@@ -50,6 +51,7 @@ model Workspace {
   adminNote     String?
   payments    Payment[]
   tickets     Ticket[]
+  creditTxns  CreditTxn[]
   memberships Membership[]
   invites     Invite[]
   channels    Channel[]
@@ -463,4 +465,22 @@ model EmailLog {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+// Pay-as-you-go message credits: purchases (Razorpay one-time orders) and admin adjustments.
+model CreditTxn {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  kind        String // PURCHASE | ADJUST
+  credits     Int // positive = added, negative = removed
+  amount      Int       @default(0) // paise paid (purchases)
+  packName    String?
+  orderId     String?   @unique // Razorpay order_…
+  paymentId   String?
+  status      String    @default("PAID") // CREATED | PAID | FAILED
+  note        String?
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId, createdAt])
 }
