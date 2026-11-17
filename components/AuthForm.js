@@ -28,6 +28,7 @@ export default function AuthForm({ mode }) {
   const signup = mode === 'signup';
   const socialError = loginErrors[params.get('connect')];
   const nextParam = safeNext(params.get('next'));
+  const pickedPlan = signup && /^(STARTER|PRO|AGENCY)$/.test(params.get('plan') || '') ? params.get('plan') : null;
   const q = nextParam ? `?next=${encodeURIComponent(nextParam)}` : '';
 
   async function submit(e) {
@@ -50,6 +51,7 @@ export default function AuthForm({ mode }) {
         <Link href="/" className="inline-flex items-center gap-2 font-display text-xl font-bold"><img src="/icon.png" alt="" className="h-8 w-8 rounded-lg" />ReplyRelay</Link>
         <h1 className="mt-8 font-display text-3xl font-bold">{signup ? 'Start automating your comments' : 'Welcome back'}</h1>
         <p className="mt-2 text-slate">{signup ? 'Sign up with the account you want to automate.' : 'Sign in the same way you signed up.'}</p>
+        {pickedPlan && <p className="mt-4 rounded-lg border border-marigold/50 bg-marigold/10 px-3 py-2 text-sm">You picked the <strong>{pickedPlan[0] + pickedPlan.slice(1).toLowerCase()}</strong> plan. Create your account first; you can start it any time from <strong>Billing</strong>.</p>}
 
         {socialError && <p role="alert" className="mt-6 rounded-lg border border-bad/30 bg-bad/5 px-3 py-2 text-sm text-bad">{socialError} {params.get('reason') && <span className="opacity-80">({params.get('reason')})</span>}</p>}
 

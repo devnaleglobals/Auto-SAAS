@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import PublicHeader, { PublicFooter } from '@/components/PublicHeader';
-import { rupees } from '@/lib/plans';
 import { publicPricing } from '@/lib/publicData';
+import PricingCards from '@/components/PricingCards';
 
 export const revalidate = 60; // admin price changes show within a minute
 export const metadata = { title: 'Pricing — ReplyRelay', description: 'Simple monthly plans in rupees. Free trial, no card needed.' };
@@ -25,21 +25,7 @@ export default async function Pricing() {
         {trial && <p className="mt-4 inline-flex rounded-full bg-marigold/20 px-4 py-1.5 text-sm font-semibold">{trial.days}-day free trial of {trial.plan} · no card needed</p>}
         <p className="mt-3 text-xs text-slate">All prices in Indian rupees (INR), billed monthly. Applicable GST is shown on your invoice. <Link href="/refunds" className="underline">Refund &amp; cancellation policy</Link>.</p>
 
-        <div className={`mt-10 grid gap-4 md:grid-cols-2 ${plans.length >= 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
-          {plans.map((p) => (
-            <div key={p.key} className={`card flex flex-col p-6 ${p.popular ? 'border-ink shadow-lift ring-1 ring-ink' : ''}`}>
-              <div className="flex items-center justify-between"><h2 className="font-display text-xl font-bold">{p.name}</h2>{p.popular && <span className="rounded-full bg-marigold/25 px-2 py-0.5 text-xs font-semibold">Most popular</span>}</div>
-              <p className="mt-3"><span className="font-display text-4xl font-bold">{rupees(p.price)}</span><span className="text-sm text-slate">{p.price ? ' / month' : ' forever'}</span></p>
-              <p className="mt-2 text-sm text-slate">{p.blurb}</p>
-              <ul className="mt-5 space-y-2 text-sm">
-                <li><strong>{Number(p.messages).toLocaleString('en-IN')}</strong> messages a month</li>
-                <li><strong>{p.accounts}</strong> Instagram or Facebook account{p.accounts > 1 ? 's' : ''}</li>
-                <li><strong>{p.members}</strong> team member{p.members > 1 ? 's' : ''}</li>
-              </ul>
-              <Link href="/signup" className={`${p.popular ? 'btn-primary' : 'btn-ghost'} mt-auto w-full`} style={{ marginTop: '1.5rem' }}>{p.price ? (trial ? 'Start free trial' : `Start with ${p.name}`) : 'Start free'}</Link>
-            </div>
-          ))}
-        </div>
+        <PricingCards plans={plans} trial={trial} />
 
         <div className="card mt-10 p-6">
           <h2 className="font-display text-lg font-bold">Included in every plan</h2>
